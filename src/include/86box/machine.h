@@ -1101,6 +1101,7 @@ extern const device_t  p5vxb_device;
 #endif
 extern int             machine_at_p5vxb_init(const machine_t *);
 extern int             machine_at_p55va_init(const machine_t *);
+extern int             machine_at_ergoproe452_init(const machine_t *);
 extern int             machine_at_gw2kte_init(const machine_t *);
 extern int             machine_at_brio80xx_init(const machine_t *);
 #ifdef EMU_DEVICE_H
