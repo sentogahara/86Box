@@ -93,6 +93,7 @@ enum {
     S3_PHOENIX_TRIO64,
     S3_PHOENIX_TRIO64_ONBOARD,
     S3_PHOENIX_VISION864,
+    S3_PHOENIX_VISION864_ONBOARD,
     S3_DIAMOND_STEALTH64_764,
     S3_SPEA_MIRAGE_86C801,
     S3_SPEA_MIRAGE_86C805,
@@ -11435,6 +11436,14 @@ s3_init(const device_t *info)
             else
                 video_inform(VIDEO_FLAG_TYPE_SPECIAL, &timing_s3_vision864_vlb);
             break;
+        case S3_PHOENIX_VISION864_ONBOARD:
+            bios_fn = NULL;
+            chip    = S3_VISION864;
+            if (info->flags & DEVICE_PCI)
+                video_inform(VIDEO_FLAG_TYPE_SPECIAL, &timing_s3_vision864_pci);
+            else
+                video_inform(VIDEO_FLAG_TYPE_SPECIAL, &timing_s3_vision864_vlb);
+            break;
         case S3_NUMBER9_9FX_531:
             bios_fn = ROM_NUMBER9_9FX_531;
             chip    = S3_VISION868;
@@ -11988,6 +11997,7 @@ s3_init(const device_t *info)
 
         case S3_PARADISE_BAHAMAS64:
         case S3_PHOENIX_VISION864:
+        case S3_PHOENIX_VISION864_ONBOARD:
         case S3_MIROCRYSTAL20SD_864: /*BIOS 3.xx has a SDAC ramdac.*/
             svga->decode_mask = (8 << 20) - 1;
             if (s3->card_type == S3_PARADISE_BAHAMAS64)
@@ -12304,6 +12314,25 @@ s3_force_redraw(void *priv)
 }
 
 // clang-format off
+static const device_config_t s3_vision864_onboard_config[] = {
+    {
+        .name           = "memory",
+        .description    = "Memory size",
+        .type           = CONFIG_SELECTION,
+        .default_string = NULL,
+        .default_int    = 2,
+        .file_filter    = NULL,
+        .spinner        = { 0 },
+        .selection      = {
+             { .description = "1 MB", .value = 1 },
+             { .description = "2 MB", .value = 2 },
+             { .description = ""                 }
+        },
+        .bios           = { { 0 } }
+    },
+    { .name = "", .description = "", .type = CONFIG_END }
+};
+
 static const device_config_t s3_trio_onboard_config[] = {
     {
         .name           = "memory",
@@ -12367,6 +12396,20 @@ const device_t s3_86c805_onboard_vlb_device = {
     .speed_changed = s3_speed_changed,
     .force_redraw  = s3_force_redraw,
     .config        = NULL
+};
+
+const device_t s3_vision864_onboard_pci_device = {
+    .name          = "S3 Vision864 PCI On-Board",
+    .internal_name = "s3_vision864_onboard_pci",
+    .flags         = DEVICE_PCI,
+    .local         = S3_PHOENIX_VISION864_ONBOARD,
+    .init          = s3_init,
+    .close         = s3_close,
+    .reset         = s3_reset,
+    .available     = NULL,
+    .speed_changed = s3_speed_changed,
+    .force_redraw  = s3_force_redraw,
+    .config        = s3_vision864_onboard_config
 };
 
 const device_t s3_trio32_onboard_vlb_device = {

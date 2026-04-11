@@ -11374,7 +11374,7 @@ const machine_t machines[] = {
             .max_multi   = 3.0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        /* Machine has custom (currently unemulated) power management harware
+        /* Machine has custom (currently unemulated) power management hardware
            needed for the APM interface to function */
         .flags     = MACHINE_IDE | MACHINE_VIDEO | MACHINE_APM,
         .ram       = {
@@ -13547,8 +13547,7 @@ const machine_t machines[] = {
         .device                   = NULL,
         .kbd_device               = NULL,
         .fdc_device               = NULL,
-        // .vid_device               = &s3_phoenix_vision864_pci_device,  /* Onboard variant not yet emulated */
-        .vid_device               = NULL,
+        .vid_device               = &s3_vision864_onboard_pci_device,
         .snd_device               = NULL,
         .net_device               = NULL,
         .aliases                  = { "" }
