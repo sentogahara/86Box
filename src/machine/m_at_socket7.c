@@ -664,6 +664,159 @@ machine_at_p55t2s_init(const machine_t *model)
     return ret;
 }
 
+static const device_config_t s1563_config[] = {
+    // clang-format off
+    {
+        .name           = "bios",
+        .description    = "BIOS Version",
+        .type           = CONFIG_BIOS,
+        .default_string = "s1563",
+        .default_int    = 0,
+        .file_filter    = NULL,
+        .spinner        = { 0 },
+        .selection      = { { 0 } },
+        .bios           = {
+            {
+                .name          = "AMIBIOS 6 (071595) - Revision 1.5",
+                .internal_name = "s1563_am15",
+                .bios_type     = BIOS_NORMAL,
+                .files_no      = 1,
+                .local         = 0,
+                .size          = 131072,
+                .files         = { "roms/machines/s1563/S1562P.ROM", "" }
+            },
+            {
+                .name          = "AMIBIOS 6 (071595) - Revision 2.12",
+                .internal_name = "s1563_am212",
+                .bios_type     = BIOS_NORMAL,
+                .files_no      = 1,
+                .local         = 0,
+                .size          = 131072,
+                .files         = { "roms/machines/s1563/S56AMI22.ROM", "" }
+            },
+            {
+                .name          = "Award Modular BIOS v4.51PG - Revision 1.0",
+                .internal_name = "s1563_aw10",
+                .bios_type     = BIOS_NORMAL,
+                .files_no      = 1,
+                .local         = 0,
+                .size          = 131072,
+                .files         = { "roms/machines/s1563/S56AWD10.BIN", "" }
+            },
+            {
+                .name          = "Award Modular BIOS v4.51PG - Revision 2.0",
+                .internal_name = "s1563_aw20",
+                .bios_type     = BIOS_NORMAL,
+                .files_no      = 1,
+                .local         = 0,
+                .size          = 131072,
+                .files         = { "roms/machines/s1563/S56AWD20.BIN", "" }
+            },
+            {
+                .name          = "Award Modular BIOS v4.51PG - Revision 2.22",
+                .internal_name = "s1563_aw222",
+                .bios_type     = BIOS_NORMAL,
+                .files_no      = 1,
+                .local         = 0,
+                .size          = 131072,
+                .files         = { "roms/machines/s1563/TOMCAT15.BIN", "" }
+            },
+            {
+                .name          = "Award Modular BIOS v4.51PG - Revision 3.00",
+                .internal_name = "s1563_aw30",
+                .bios_type     = BIOS_NORMAL,
+                .files_no      = 1,
+                .local         = 0,
+                .size          = 131072,
+                .files         = { "roms/machines/s1563/S56AWD30.BIN", "" }
+            },
+            {
+                .name          = "Award Modular BIOS v4.51PG - Revision 3.02",
+                .internal_name = "s1563_aw302",
+                .bios_type     = BIOS_NORMAL,
+                .files_no      = 1,
+                .local         = 0,
+                .size          = 131072,
+                .files         = { "roms/machines/s1563/S56AW302.BIN", "" }
+            },
+            {
+                .name          = "Award Modular BIOS v4.51PG - Revision 4.02",
+                .internal_name = "s1563",
+                .bios_type     = BIOS_NORMAL,
+                .files_no      = 1,
+                .local         = 0,
+                .size          = 131072,
+                .files         = { "roms/machines/s1563/S56aw402.bin", "" }
+            },
+            {
+                .name          = "MR BIOS V3.46 - Revision V098B5SD",
+                .internal_name = "s1563_mr",
+                .bios_type     = BIOS_NORMAL,
+                .files_no      = 1,
+                .local         = 0,
+                .size          = 131072,
+                .files         = { "roms/machines/s1563/V098B5SD.BIO", "" }
+            },
+            { .files_no = 0 }
+        }
+    },
+    { .name = "", .description = "", .type = CONFIG_END }
+    // clang-format on
+};
+
+const device_t s1563_device = {
+    .name          = "Tyan S1563 (Tomcat III)",
+    .internal_name = "s1563_device",
+    .flags         = 0,
+    .local         = 0,
+    .init          = NULL,
+    .close         = NULL,
+    .reset         = NULL,
+    .available     = NULL,
+    .speed_changed = NULL,
+    .force_redraw  = NULL,
+    .config        = s1563_config
+};
+
+int
+machine_at_s1563_init(const machine_t *model)
+{
+    int         ret = 0;
+    const char *fn;
+
+    /* No ROMs available */
+    if (!device_available(model->device))
+        return ret;
+
+    device_context(model->device);
+    int is_mr = !strcmp(device_get_config_bios("bios"), "s1563_mr");
+    fn        = device_get_bios_file(machine_get_device(machine), device_get_config_bios("bios"), 0);
+    ret       = bios_load_linear(fn, 0x000e0000, 131072, 0);
+    device_context_restore();
+
+    machine_at_common_init(model);
+
+    pci_init(PCI_CONFIG_TYPE_1);
+    pci_register_slot(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0);
+    pci_register_slot(0x11, PCI_CARD_NORMAL,      4, 1, 2, 3);
+    pci_register_slot(0x12, PCI_CARD_NORMAL,      3, 4, 1, 2);
+    pci_register_slot(0x13, PCI_CARD_NORMAL,      2, 3, 4, 1);
+    pci_register_slot(0x14, PCI_CARD_NORMAL,      1, 2, 3, 4);
+    pci_register_slot(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 4);
+
+    device_add(&i430hx_device);
+    device_add(&piix3_device);
+    device_add_params(machine_get_kbc_device(machine), (void *) model->kbc_params);
+    device_add(&intel_flash_bxt_device);
+
+    if (is_mr)
+        device_add_params(&fdc37c669_device, (void *) 0);
+    else
+        device_add_params(&fdc37c6xx_device, (void *) FDC37C665);
+
+    return ret;
+}
+
 /* i430VX */
 int
 machine_at_ap5vm_init(const machine_t *model)

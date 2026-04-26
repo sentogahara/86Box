@@ -1090,6 +1090,10 @@ extern int             machine_at_m7shi_init(const machine_t *);
 extern int             machine_at_epc2102_init(const machine_t *);
 extern int             machine_at_pcv90_init(const machine_t *);
 extern int             machine_at_p55t2s_init(const machine_t *);
+#ifdef EMU_DEVICE_H
+extern const device_t  s1563_device;
+#endif
+extern int             machine_at_s1563_init(const machine_t *);
 
 /* i430VX */
 extern int             machine_at_ap5vm_init(const machine_t *);
