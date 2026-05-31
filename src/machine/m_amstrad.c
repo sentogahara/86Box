@@ -220,8 +220,8 @@ recalc_timings_1512(amsvid_t *vid)
     _dispofftime = disptime - _dispontime;
     _dispontime *= CGACONST;
     _dispofftime *= CGACONST;
-    vid->dispontime  = (uint64_t) _dispontime;
-    vid->dispofftime = (uint64_t) _dispofftime;
+    vid->dispontime  = (uint64_t) (int64_t) _dispontime;
+    vid->dispofftime = (uint64_t) (int64_t) _dispofftime;
 }
 
 static void
@@ -666,7 +666,7 @@ vid_init_1512(amstrad_t *ams)
 
     video_inform(VIDEO_FLAG_TYPE_CGA, &timing_pc1512);
 
-    vid->vram    = malloc(0x10000);
+    vid->vram    = calloc(1, 0x10000);
     vid->cgacol  = 7;
     vid->cgamode = 0x12;
 
@@ -719,7 +719,7 @@ const device_config_t vid_1512_config[] = {
         .file_filter    = NULL,
         .spinner        = { 0 },
         .selection      = {
-            { .description = "PC-CM (Colour)",     .value = 0 },
+            { .description = "PC-CM (Color)",      .value = 0 },
             { .description = "PC-MM (Monochrome)", .value = 3 },
             { .description = ""                               }
         },
@@ -751,16 +751,16 @@ const device_config_t vid_1512_config[] = {
         .file_filter    = NULL,
         .spinner        = { 0 },
         .selection      = {
-            { .description = "US English", .value = 3 },
-            { .description = "Danish",     .value = 1 },
-            { .description = "Greek",      .value = 0 },
-            { .description = ""                       }
+            { .description = "English (US)", .value = 3 },
+            { .description = "Danish",       .value = 1 },
+            { .description = "Greek",        .value = 0 },
+            { .description = ""                         }
         },
         .bios           = { { 0 } }
     },
     {
         .name           = "language",
-        .description    = "BIOS language",
+        .description    = "BIOS Language",
         .type           = CONFIG_SELECTION,
         .default_string = NULL,
         .default_int    = 7,
@@ -961,7 +961,7 @@ const device_config_t vid_1640_config[] = {
     },
     {
         .name           = "language",
-        .description    = "BIOS language",
+        .description    = "BIOS Language",
         .type           = CONFIG_SELECTION,
         .default_string = NULL,
         .default_int    = 7,
@@ -1758,7 +1758,7 @@ vid_init_200(amstrad_t *ams)
 
     cga       = &vid->cga;
     mda       = &vid->mda;
-    cga->vram = mda->vram = malloc(0x4000);
+    cga->vram = mda->vram = calloc(1, 0x4000);
     cga_init(cga);
     mda_init(mda);
 
@@ -1877,17 +1877,17 @@ const device_config_t vid_200_config[] = {
         .file_filter    = NULL,
         .spinner        = { 0 },
         .selection      = {
-            { .description = "US English", .value = 3 },
-            { .description = "Portugese",  .value = 2 },
-            { .description = "Norwegian",  .value = 1 },
-            { .description = "Greek",      .value = 0 },
-            { .description = ""                       }
+            { .description = "English (US)", .value = 3 },
+            { .description = "Portuguese",   .value = 2 },
+            { .description = "Norwegian",    .value = 1 },
+            { .description = "Greek",        .value = 0 },
+            { .description = ""                         }
         },
         .bios           = { { 0 } }
     },
     {
         .name           = "language",
-        .description    = "BIOS language",
+        .description    = "BIOS Language",
         .type           = CONFIG_SELECTION,
         .default_string = NULL,
         .default_int    = 7,
@@ -1974,17 +1974,17 @@ const device_config_t vid_ppc512_config[] = {
         .file_filter    = NULL,
         .spinner        = { 0 },
         .selection      = {
-            { .description = "US English", .value = 3 },
-            { .description = "Portugese",  .value = 2 },
-            { .description = "Norwegian",  .value = 1 },
-            { .description = "Greek",      .value = 0 },
-            { .description = ""                       }
+            { .description = "English (US)", .value = 3 },
+            { .description = "Portuguese",   .value = 2 },
+            { .description = "Norwegian",    .value = 1 },
+            { .description = "Greek",        .value = 0 },
+            { .description = ""                         }
         },
         .bios           = { { 0 } }
     },
     {
         .name           = "language",
-        .description    = "BIOS language",
+        .description    = "BIOS Language",
         .type           = CONFIG_SELECTION,
         .default_string = NULL,
         .default_int    = 7,

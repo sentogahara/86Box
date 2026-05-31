@@ -49,6 +49,8 @@ extern MainWindow *main_window;
 #include "qt_openglrenderer.hpp"
 #include "qt_openglshadermanagerdialog.hpp"
 
+#include "qt_defs.hpp"
+
 extern "C" {
 #include <86box/86box.h>
 #include <86box/plat.h>
@@ -68,6 +70,8 @@ extern bool cpu_thread_running;
 #define SCALE_ABSOLUTE 2
 
 static GLfloat matrix[] = { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 };
+
+const GLenum buffers[]{ GL_BACK_LEFT, GL_BACK_RIGHT };
 
 extern int video_filter_method;
 extern int video_vsync;
@@ -200,7 +204,7 @@ OpenGLRenderer::create_program(struct shader_program *program)
         glw.glGetProgramiv(program->id, GL_INFO_LOG_LENGTH, &maxLength);
         char *log = (char *) malloc(maxLength);
         glw.glGetProgramInfoLog(program->id, maxLength, &length, log);
-        main_window->showMessage(MBX_ERROR | MBX_FATAL, tr("GLSL Error"), tr("Program not linked:\n\n%1").arg(log), false);
+        main_window->showMessage(MBX_ERROR, tr("GLSL Error"), tr("Program not linked:\n\n%1").arg(log), false);
         // wx_simple_messagebox("GLSL Error", "Program not linked:\n%s", log);
         free(log);
         return 0;
@@ -254,7 +258,7 @@ OpenGLRenderer::compile_shader(GLenum shader_type, const char *prepend, const ch
         glw.glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &length);
         char *log = (char *) malloc(length);
         glw.glGetShaderInfoLog(shader, length, &length, log);
-        main_window->showMessage(MBX_ERROR | MBX_FATAL, tr("GLSL Error"), tr("Could not compile shader:\n\n%1").arg(log), false);
+        main_window->showMessage(MBX_ERROR, tr("GLSL Error"), tr("Could not compile shader:\n\n%1").arg(log), false);
         // wx_simple_messagebox("GLSL Error", "Could not compile shader:\n%s", log);
 
         ogl3_log("Could not compile shader: %s\n", log);
@@ -654,7 +658,7 @@ OpenGLRenderer::load_glslp(glsl_t *glsl, int num_shader, const char *f)
 
             if (!load_texture(file, &tex->texture)) {
                 // QMessageBox::critical(main_window, tr("GLSL Error"), tr("Could not load texture: %s").arg(file));
-                main_window->showMessage(MBX_ERROR | MBX_FATAL, tr("GLSL Error"), tr("Could not load texture: %1").arg(file), false);
+                main_window->showMessage(MBX_ERROR, tr("GLSL Error"), tr("Could not load texture: %1").arg(file), false);
                 ogl3_log("Could not load texture %s!\n", file);
                 failed = 1;
                 break;
@@ -700,7 +704,7 @@ OpenGLRenderer::load_glslp(glsl_t *glsl, int num_shader, const char *f)
                 ogl3_log("Creating pass %u (%s)\n", (i + 1), pass->alias);
                 ogl3_log("Loading shader %s...\n", shader->shader_fn);
                 if (!shader->shader_program) {
-                    main_window->showMessage(MBX_ERROR | MBX_FATAL, tr("GLSL Error"), tr("Could not load shader: %1").arg(shader->shader_fn), false);
+                    main_window->showMessage(MBX_ERROR, tr("GLSL Error"), tr("Could not load shader: %1").arg(shader->shader_fn), false);
                     // wx_simple_messagebox("GLSL Error", "Could not load shader: %s", shader->shader_fn);
                     ogl3_log("Could not load shader %s\n", shader->shader_fn);
                     failed = 1;
@@ -872,6 +876,11 @@ OpenGLRenderer::initialize()
             throw opengl_init_error(tr("OpenGL version 3.0 or greater is required. Current version is %1.%2").arg(version.first).arg(version.second));
 
         glw.initializeOpenGLFunctions();
+
+        int draw_buffer = GL_NONE;
+        glw.glGetIntegerv(GL_DRAW_BUFFER, &draw_buffer);
+        if (draw_buffer == GL_NONE)
+            glw.glDrawBuffers(2, buffers);
 
         glw.glClearColor(0, 0, 0, 1);
 
@@ -1114,7 +1123,7 @@ OpenGLRenderer::initialize()
         for (auto &flag : buf_usage)
             flag.test_and_set();
 
-        main_window->showMessage(MBX_ERROR | MBX_FATAL, tr("Error initializing OpenGL"), e.what() + tr("\nFalling back to software rendering."), false);
+        main_window->showMessage(MBX_ERROR, QString(), tr("Error initializing OpenGL.") + QStringLiteral("\n") + e.what() + QStringLiteral("\n") + tr("Falling back to software rendering."), false);
 
         context->doneCurrent();
         isFinalized   = true;
@@ -1131,6 +1140,11 @@ OpenGLRenderer::finalize()
         return;
 
     context->makeCurrent(this);
+
+    int draw_buffer = GL_NONE;
+    glw.glGetIntegerv(GL_DRAW_BUFFER, &draw_buffer);
+    if (draw_buffer == GL_NONE)
+        glw.glDrawBuffers(2, buffers);
 
     delete_texture(&scene_texture);
 
@@ -1156,6 +1170,11 @@ OpenGLRenderer::onBlit(int buf_idx, int x, int y, int w, int h)
         return;
 
     context->makeCurrent(this);
+
+    int draw_buffer = GL_NONE;
+    glw.glGetIntegerv(GL_DRAW_BUFFER, &draw_buffer);
+    if (draw_buffer == GL_NONE)
+        glw.glDrawBuffers(2, buffers);
 
     if (source.width() != w || source.height() != h) {
         glw.glBindTexture(GL_TEXTURE_2D, scene_texture.id);
@@ -1227,6 +1246,11 @@ OpenGLRenderer::resizeEvent(QResizeEvent *event)
         return;
 
     context->makeCurrent(this);
+
+    int draw_buffer = GL_NONE;
+    glw.glGetIntegerv(GL_DRAW_BUFFER, &draw_buffer);
+    if (draw_buffer == GL_NONE)
+        glw.glDrawBuffers(2, buffers);
 
     glw.glViewport(
         destination.x(),
@@ -1728,7 +1752,7 @@ OpenGLRenderer::render()
 
         int pitch_adj = (4 - ((width * 3) & 3)) & 3;
         QImage image((uchar*)rgb, width, height, (width * 3) + pitch_adj, QImage::Format_RGB888);
-        image.mirrored(false, true).save(path, "png");
+        image.IMG_FLIPPED.save(path, "png");
         monitors[r_monitor_index].mon_screenshots--;
         free(rgb);
     }
@@ -1743,7 +1767,7 @@ OpenGLRenderer::render()
         int pitch_adj = (4 - ((width * 3) & 3)) & 3;
         QImage image((uchar*)rgb, width, height, (width * 3) + pitch_adj, QImage::Format_RGB888);
         QClipboard *clipboard = QApplication::clipboard();
-        clipboard->setImage(image.mirrored(false, true), QClipboard::Clipboard);
+        clipboard->setImage(image.IMG_FLIPPED, QClipboard::Clipboard);
         monitors[r_monitor_index].mon_screenshots_clipboard--;
         free(rgb);
     }

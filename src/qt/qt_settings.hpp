@@ -10,7 +10,6 @@ class Settings;
 class SettingsMachine;
 class SettingsDisplay;
 class SettingsInput;
-class SettingsKeyBindings;
 class SettingsSound;
 class SettingsNetwork;
 class SettingsPorts;
@@ -26,7 +25,7 @@ class Settings : public QDialog {
 public:
     explicit Settings(QWidget *parent = nullptr);
     ~Settings();
-    void save();
+    void save(int soft);
 
     static Settings *settings;
 protected slots:
@@ -38,7 +37,6 @@ private:
     SettingsMachine            *machine;
     SettingsDisplay            *display;
     SettingsInput              *input;
-    SettingsKeyBindings        *key_bindings;
     SettingsSound              *sound;
     SettingsNetwork            *network;
     SettingsPorts              *ports;
