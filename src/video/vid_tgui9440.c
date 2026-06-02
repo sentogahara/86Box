@@ -4029,9 +4029,8 @@ tgui_init(const device_t *info)
 {
     const char *bios_fn;
 
-    tgui_t *tgui = malloc(sizeof(tgui_t));
+    tgui_t *tgui = calloc(1, sizeof(tgui_t));
     svga_t *svga = &tgui->svga;
-    memset(tgui, 0, sizeof(tgui_t));
 
     tgui->vram_size = device_get_config_int("memory") << 20;
     tgui->vram_mask = tgui->vram_size - 1;
@@ -4294,7 +4293,7 @@ const device_t tgui9660_onboard_pci_device = {
     .available     = NULL,
     .speed_changed = tgui_speed_changed,
     .force_redraw  = tgui_force_redraw,
-    .config        = tgui96xx_config
+    .config        = tgui9440_config
 };
 
 const device_t tgui9680_pci_device = {

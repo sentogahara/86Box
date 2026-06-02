@@ -15,7 +15,7 @@
 %global romver 6.0
 
 Name:		86Box
-Version:	6.0
+Version:	6.1
 Release:	1%{?dist}
 Summary:	Classic PC emulator
 License:	GPLv2+
@@ -88,7 +88,7 @@ Collection of ROMs for use with 86Box.
 %cmake_install
 
 # install icons
-for i in 48 64 72 96 128 192 256 512; do
+for i in 16 20 24 32 40 48 64 72 128 256; do
   mkdir -p $RPM_BUILD_ROOT%{_datadir}/icons/hicolor/${i}x${i}/apps
   cp src/unix/assets/${i}x${i}/net.86box.86Box.png $RPM_BUILD_ROOT%{_datadir}/icons/hicolor/${i}x${i}/apps
 done
@@ -121,5 +121,5 @@ popd
 %{_datadir}/%{name}/roms
 
 %changelog
-* Sat Aug 31 Jasmine Iwanek <jriwanek[AT]gmail.com> 6.0-1
+* Sat Aug 31 Jasmine Iwanek <jriwanek[AT]gmail.com> 6.1-1
 - Bump release

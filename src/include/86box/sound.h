@@ -14,17 +14,19 @@
  *
  *          Copyright 2008-2018 Sarah Walker.
  *          Copyright 2016-2025 Miran Grca.
- *          Copyright 2024-2025 Jasmine Iwanek.
+ *          Copyright 2024-2026 Jasmine Iwanek.
  */
 #ifndef EMU_SOUND_H
 #define EMU_SOUND_H
 
-#define SOUND_CARD_MAX 4 /* currently we support up to 4 sound cards and a standalome MPU401 */
+#define SOUND_CARD_MAX 4 /* currently we support up to 4 sound cards and a standalone MPU401 */
 
-extern int sound_gain;
+extern int  sound_gain;
+extern char sound_output_device[512]; /* selected audio output device name, empty = system default */
 
 #define FREQ_44100  44100
 #define FREQ_48000  48000
+#define FREQ_48558  48558
 #define FREQ_49716  49716
 #define FREQ_88200  88200
 #define FREQ_96000  96000
@@ -35,11 +37,15 @@ extern int sound_gain;
 #define MUSIC_FREQ  FREQ_49716
 #define MUSICBUFLEN (MUSIC_FREQ / 36)
 
+/* Unfortunately, 48558 / 6 = 8093, which is a prime number. */
+#define CQM_FREQ    FREQ_48558
+#define CQMBUFLEN   (CQM_FREQ / 6)
+
 #define CD_FREQ     FREQ_44100
 #define CD_BUFLEN   (CD_FREQ / 10)
 
 #define WT_FREQ     FREQ_44100
-#define WTBUFLEN    (MUSIC_FREQ / 45)
+#define WTBUFLEN    (WT_FREQ / 45)
 
 enum {
     SOUND_NONE = 0,
@@ -51,23 +57,30 @@ extern int gated;
 extern int speakval;
 extern int speakon;
 
-extern int sound_pos_global;
+extern int midi_freq;
+extern int midi_buf_size;
 
+extern int sound_pos_global;
 extern int music_pos_global;
+extern int cqm_pos_global;
 extern int wavetable_pos_global;
 
 extern int sound_card_current[SOUND_CARD_MAX];
 
 extern void sound_add_handler(void (*get_buffer)(int32_t *buffer,
-                                                 int len, void *priv),
+                                                 uint16_t len, void *priv),
                               void *priv);
 
 extern void music_add_handler(void (*get_buffer)(int32_t *buffer,
-                                                 int len, void *priv),
+                                                 uint16_t len, void *priv),
                               void *priv);
 
+extern void cqm_add_handler(void (*get_buffer)(int32_t *buffer,
+                                               uint16_t len, void *priv),
+                            void *priv);
+
 extern void wavetable_add_handler(void (*get_buffer)(int32_t *buffer,
-                                                     int len, void *priv),
+                                                     uint16_t len, void *priv),
                                   void *priv);
 
 extern void sound_set_cd_audio_filter(void (*filter)(int     channel,
@@ -76,9 +89,15 @@ extern void sound_set_cd_audio_filter(void (*filter)(int     channel,
 extern void sound_set_pc_speaker_filter(void (*filter)(int     channel,
                                                        double *buffer, void *priv),
                                         void *priv);
+extern void sound_set_midi_filter(void (*filter)(int     channel,
+                                                 double *buffer, void *priv),
+                                  void *priv);
 
 extern void (*filter_pc_speaker)(int channel, double *buffer, void *priv);
 extern void *filter_pc_speaker_p;
+
+extern void (*filter_midi)(int channel, double *buffer, void *priv);
+extern void *filter_midi_p;
 
 extern int sound_card_available(int card);
 #ifdef EMU_DEVICE_H
@@ -96,6 +115,7 @@ extern void sound_init(void);
 extern void sound_reset(void);
 
 extern void sound_card_reset(void);
+extern void sound_close(void);
 
 extern void sound_cd_thread_end(void);
 extern void sound_cd_thread_reset(void);
@@ -106,10 +126,15 @@ extern void sound_fdd_thread_end(void);
 extern void sound_hdd_thread_init(void);
 extern void sound_hdd_thread_end(void);
 
-extern void closeal(void);
-extern void inital(void);
+extern const char *sound_get_output_devices(void); /* returns double-null-terminated list, or NULL */
+extern int         sound_get_device_sample_rate(const char *device_name);   /* probe native rate, 0 = unknown */
+extern int         sound_get_device_supported_rates(const char *device_name, /* probe supported rates into rates_out; returns count */
+                                                    int *rates_out, int max_rates);
+extern void        closeal(void);
+extern void        inital(void);
 extern void givealbuffer(const void *buf);
 extern void givealbuffer_music(const void *buf);
+extern void givealbuffer_cqm(const void *buf);
 extern void givealbuffer_wt(const void *buf);
 extern void givealbuffer_cd(const void *buf);
 extern void givealbuffer_fdd(const void *buf, const uint32_t size);
@@ -133,6 +158,8 @@ extern const device_t ad1816_device;
 extern const device_t azt2316a_device;
 extern const device_t azt1605_device;
 extern const device_t aztpr16_device;
+extern const device_t azt2316r_device;
+extern const device_t azt2320_device;
 
 /* C-Media CMI8x38 */
 extern const device_t cmi8338_device;
@@ -143,6 +170,7 @@ extern const device_t cmi8738_6ch_onboard_device;
 
 /* Covox ISA */
 extern const device_t voicemasterkey_device;
+extern const device_t soundmaster_device;
 extern const device_t soundmasterplus_device;
 extern const device_t isadacr0_device;
 extern const device_t isadacr1_device;
@@ -196,6 +224,7 @@ extern const device_t cs4238b_device;
 /* ESS Technology */
 extern const device_t ess_688_device;
 extern const device_t ess_ess0100_pnp_device;
+extern const device_t ess_ess0968_pnp_688_device;
 extern const device_t ess_1688_device;
 extern const device_t ess_ess0102_pnp_device;
 extern const device_t ess_ess0968_pnp_device;
@@ -218,6 +247,9 @@ extern const device_t gus_v37_device;
 extern const device_t gus_max_device;
 extern const device_t gus_ace_device;
 
+/* IBM Music Feature Card */
+extern const device_t imfc_device;
+
 /* IBM PS/1 Audio Card */
 extern const device_t ps1snd_device;
 
@@ -228,13 +260,17 @@ extern const device_t entertainer_device;
 /* Mindscape Music Board */
 extern const device_t mmb_device;
 
+/* MediaVision ThunderBoard */
+extern const device_t thunderboard_device;
+
 /* OPTi 82c93x */
 extern const device_t acermagic_s20_device;
 extern const device_t mirosound_pcm10_device;
 extern const device_t opti_82c930_device;
 extern const device_t opti_82c931_device;
 
-/* Pro Audio Spectrum Plus, 16, and 16D */
+/* Pro Audio Spectrum, Plus, 16, and 16D */
+extern const device_t pas_device;
 extern const device_t pasplus_device;
 extern const device_t pas16_device;
 extern const device_t pas16d_device;
@@ -252,6 +288,9 @@ extern const device_t tndy_device;
 
 /* Tandy Sensation */
 extern const device_t sensationaud_device;
+
+/* TexElec SAAYM */
+extern const device_t saaym_device;
 
 /* Windows Sound System */
 extern const device_t wss_device;

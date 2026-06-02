@@ -50,7 +50,7 @@ machine_at_m729_init(const machine_t *model)
     if (bios_only || !ret)
         return ret;
 
-    machine_at_common_init_ex(model, 2);
+    machine_at_common_init(model);
 
     pci_init(PCI_CONFIG_TYPE_1);
     pci_register_slot(0x00, PCI_CARD_NORTHBRIDGE,     0, 0, 0, 0);
@@ -83,7 +83,7 @@ machine_at_acerv62x_init(const machine_t *model)
     if (bios_only || !ret)
         return ret;
 
-    machine_at_common_init_ex(model, 2);
+    machine_at_common_init(model);
 
     pci_init(PCI_CONFIG_TYPE_1);
     pci_register_slot(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0);
@@ -98,7 +98,101 @@ machine_at_acerv62x_init(const machine_t *model)
     device_add(&piix3_device);
     device_add_params(&fdc37c93x_device, (void *) (FDC37XXX5 | FDC37C93X_APM));
     device_add(&sst_flash_29ee020_device);
-    spd_register(SPD_TYPE_SDRAM, 0x7, 128);
+
+    return ret;
+}
+
+static const device_config_t p6kdi_config[] = {
+    // clang-format off
+    {
+        .name           = "bios",
+        .description    = "BIOS Version",
+        .type           = CONFIG_BIOS,
+        .default_string = "p6kdi",
+        .default_int    = 0,
+        .file_filter    = NULL,
+        .spinner        = { 0 },
+        .selection      = { { 0 } },
+        .bios           = {
+            {
+                .name          = "AMIBIOS 6 (071595) - Revision 1.0Y",
+                .internal_name = "p6kdi10y",
+                .bios_type     = BIOS_NORMAL, 
+                .files_no      = 1,
+                .local         = 0,
+                .size          = 262144,
+                .files         = { "roms/machines/p6kdi/p6kdi10y.rom", "" }
+            },
+            {
+                .name          = "AMIBIOS 6 (071595) - Revision 2.0Y",
+                .internal_name = "p6kdi20y",
+                .bios_type     = BIOS_NORMAL, 
+                .files_no      = 1,
+                .local         = 0,
+                .size          = 262144,
+                .files         = { "roms/machines/p6kdi/p6kdi20y.rom", "" }
+            },
+            {
+                .name          = "AMIBIOS 6 (071595) - Revision 3.0",
+                .internal_name = "p6kdi",
+                .bios_type     = BIOS_NORMAL, 
+                .files_no      = 1,
+                .local         = 0,
+                .size          = 262144,
+                .files         = { "roms/machines/p6kdi/P6KDI_~2.BIN", "" }
+            },
+            { .files_no = 0 }
+        },
+    },
+    { .name = "", .description = "", .type = CONFIG_END }
+    // clang-format on
+};
+
+const device_t p6kdi_device = {
+    .name          = "AIR P6KDI",
+    .internal_name = "p6kdi",
+    .flags         = 0,
+    .local         = 0,
+    .init          = NULL,
+    .close         = NULL,
+    .reset         = NULL,
+    .available     = NULL,
+    .speed_changed = NULL,
+    .force_redraw  = NULL,
+    .config        = p6kdi_config
+};
+
+int
+machine_at_p6kdi_init(const machine_t *model)
+{
+    int         ret = 0;
+    const char *fn;
+
+    /* No ROMs available */
+    if (!device_available(model->device))
+        return ret;
+
+    device_context(model->device);
+    fn  = device_get_bios_file(machine_get_device(machine), device_get_config_bios("bios"), 0);
+    ret = bios_load_linear(fn, 0x000c0000, 262144, 0);
+    device_context_restore();
+
+    machine_at_common_init(model);
+
+    pci_init(PCI_CONFIG_TYPE_1);
+    pci_register_slot(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0);
+    pci_register_slot(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 4);
+    pci_register_slot(0x08, PCI_CARD_SCSI,        4, 0, 0, 0); /* assumed */
+    pci_register_slot(0x09, PCI_CARD_NORMAL,      1, 2, 3, 4);
+    pci_register_slot(0x0A, PCI_CARD_NORMAL,      4, 1, 2, 3);
+    pci_register_slot(0x0B, PCI_CARD_NORMAL,      3, 4, 1, 2);
+    pci_register_slot(0x0C, PCI_CARD_NORMAL,      2, 3, 4, 1);
+    pci_register_slot(0x0D, PCI_CARD_NORMAL,      1, 2, 3, 4);
+
+    device_add(&i440fx_device);
+    device_add(&piix3_device);
+    device_add_params(&fdc37c93x_device, (void *) (FDC37XXX2 | FDC37C93X_NORMAL));
+    device_add(&winbond_flash_w29c020_device);
 
     return ret;
 }
@@ -153,6 +247,40 @@ machine_at_kn97_init(const machine_t *model)
     return ret;
 }
 
+int
+machine_at_fickn6000_init(const machine_t *model)
+{
+    int ret;
+
+    ret = bios_load_linear("roms/machines/fickn6000/626ha14.rom",
+                           0x000e0000, 131072, 0);
+
+    if (bios_only || !ret)
+        return ret;
+
+    machine_at_common_init(model);
+
+    pci_init(PCI_CONFIG_TYPE_1);
+    pci_register_slot(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0);
+    pci_register_slot(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4);
+    pci_register_slot(0x08, PCI_CARD_NORMAL,      1, 2, 3, 4);
+    pci_register_slot(0x09, PCI_CARD_NORMAL,      2, 3, 4, 1);
+    pci_register_slot(0x0A, PCI_CARD_NORMAL,      3, 4, 1, 2);
+    pci_register_slot(0x0B, PCI_CARD_NORMAL,      4, 1, 2, 3);
+    pci_register_slot(0x0C, PCI_CARD_NORMAL,      1, 2, 3, 4);
+
+    device_add(&i440fx_device);
+    device_add(&piix3_device);
+    device_add_params(machine_get_kbc_device(machine), (void *) model->kbc_params);
+    device_add_params(&w83877_device, (void *) (W83877F | W83877_250));
+    /* From the very blurry TRW picture, it looks like an SST flash chip.
+       And indeed, the Micro House schema lists a jumper that selects between
+       Intel and SST flash, which specifically mentions the 29EE010 */
+    device_add(&sst_flash_29ee010_device);
+
+    return ret;
+}
+
 /* i440LX */
 static const device_config_t lx6_config[] = {
     // clang-format off
@@ -193,7 +321,7 @@ static const device_config_t lx6_config[] = {
 
 const device_t lx6_device = {
     .name          = "ABIT AB-LX6",
-    .internal_name = "lx6_device",
+    .internal_name = "lx6",
     .flags         = 0,
     .local         = 0,
     .init          = NULL,
@@ -220,7 +348,7 @@ machine_at_lx6_init(const machine_t *model)
     ret = bios_load_linear(fn, 0x000e0000, 131072, 0);
     device_context_restore();
 
-    machine_at_common_init_ex(model, 2);
+    machine_at_common_init(model);
 
     pci_init(PCI_CONFIG_TYPE_1);
     pci_register_slot(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0);
@@ -251,7 +379,7 @@ machine_at_optiplexgxa_init(const machine_t *model)
     if (bios_only || !ret)
         return ret;
 
-    machine_at_common_init_ex(model, 2);
+    machine_at_common_init(model);
 
     pci_init(PCI_CONFIG_TYPE_1);
     pci_register_slot(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 4);
@@ -433,16 +561,14 @@ machine_at_ms6117_init(const machine_t *model)
 
     device_context(model->device);
     fn  = device_get_bios_file(machine_get_device(machine), device_get_config_bios("bios"), 0);
-    if (!strcmp(fn, "roms/machines/ms6117/W617MS32.BIN") || !strcmp(fn, "roms/machines/ms6117/611732x_patched.BIN") || !strcmp(fn, "roms/machines/ms6117/BIOS.BIN"))
-        ret = bios_load_linear(fn, 0x000c0000, 262144, 0);
-    else
-        ret = bios_load_linear(fn, 0x000e0000, 131072, 0);
+    int size = device_get_bios_file_size(machine_get_device(machine), device_get_config_bios("bios"));
+    ret = bios_load_linear(fn, 0x00100000 - size, size, 0);
     device_context_restore();
 
     if (bios_only || !ret)
         return ret;
 
-    machine_at_common_init_ex(model, 2);
+    machine_at_common_init(model);
 
     pci_init(PCI_CONFIG_TYPE_1);
     pci_register_slot(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0);
@@ -457,12 +583,8 @@ machine_at_ms6117_init(const machine_t *model)
     device_add(&i440lx_device);
     device_add(&piix4e_device);
     device_add_params(&w83977_device, (void *) (W83977TF | W83977_AMI | W83977_NO_NVR));
+    device_add((size > 131072) ? &winbond_flash_w29c020_device /* assumed */ : &winbond_flash_w29c011a_device);
 
-    if (!strcmp(fn, "roms/machines/ms6117/W617MS32.BIN") || !strcmp(fn, "roms/machines/ms6117/611732x_patched.BIN") || !strcmp(fn, "roms/machines/ms6117/BIOS.BIN"))
-        device_add(&winbond_flash_w29c020_device); /* assumed */
-    else
-        device_add(&winbond_flash_w29c011a_device);
-    
     spd_register(SPD_TYPE_SDRAM, 0xF, 256);
 
     return ret;
@@ -479,7 +601,7 @@ machine_at_ma30d_init(const machine_t *model)
     if (bios_only || !ret)
         return ret;
 
-    machine_at_common_init_ex(model, 2);
+    machine_at_common_init(model);
 
     pci_init(PCI_CONFIG_TYPE_1);
     pci_register_slot(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0);
@@ -516,7 +638,7 @@ machine_at_brio83xx_init(const machine_t *model)
     if (bios_only || !ret)
         return ret;
 
-    machine_at_common_init_ex(model, 2);
+    machine_at_common_init(model);
 
     pci_init(PCI_CONFIG_TYPE_1);
     // Actual settings!
@@ -529,7 +651,7 @@ machine_at_brio83xx_init(const machine_t *model)
     pci_register_slot(0x14, PCI_CARD_VIDEO,       1, 2, 3, 4); /* Onboard */
 
     if (gfxcard[0] == VID_INTERNAL)
-        device_add(&s3_trio64v2_dx_onboard_pci_device);
+        device_add(machine_get_vid_device(machine));
 
     device_add(&i440ex_device);
     device_add(&piix4_device);
@@ -583,7 +705,7 @@ static const device_config_t como_config[] = {
 
 const device_t como_device = {
     .name          = "TriGem Como",
-    .internal_name = "como_device",
+    .internal_name = "como",
     .flags         = 0,
     .local         = 0,
     .init          = NULL,
@@ -610,7 +732,7 @@ machine_at_como_init(const machine_t *model)
     ret = bios_load_linear(fn, 0x000c0000, 262144, 0);
     device_context_restore();
 
-    machine_at_common_init_ex(model, 2);
+    machine_at_common_init(model);
 
     pci_init(PCI_CONFIG_TYPE_1);
     pci_register_slot(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0);
@@ -622,12 +744,12 @@ machine_at_como_init(const machine_t *model)
 
     device_add(&i440ex_device);
     device_add(&piix4e_device);
-    device_add_params(&fdc37m60x_device, (void*)(FDC37XXX2 | FDC37C93X_NO_NVR | FDC37XXXX_370));
+    device_add_params(&fdc37m60x_device, (void *) (FDC37XXX2 | FDC37C93X_NO_NVR | FDC37XXXX_370));
     device_add(&intel_flash_bxt_device);
     device_add(&lm78_device);
 
     if (sound_card_current[0] == SOUND_INTERNAL)
-        device_add(&cs4235_onboard_device);
+        device_add(machine_get_snd_device(machine));
 
     return ret;
 }
@@ -643,7 +765,7 @@ machine_at_p6i440e2_init(const machine_t *model)
     if (bios_only || !ret)
         return ret;
 
-    machine_at_common_init_ex(model, 2);
+    machine_at_common_init(model);
 
     pci_init(PCI_CONFIG_TYPE_1);
     pci_register_slot(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0);
@@ -676,7 +798,7 @@ machine_at_bf6_init(const machine_t *model)
     if (bios_only || !ret)
         return ret;
 
-    machine_at_common_init_ex(model, 2);
+    machine_at_common_init(model);
 
     pci_init(PCI_CONFIG_TYPE_1);
     pci_register_slot(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0);
@@ -765,7 +887,7 @@ static const device_config_t bx6_config[] = {
 
 const device_t bx6_device = {
     .name          = "ABIT AB-BX6",
-    .internal_name = "bx6_device",
+    .internal_name = "bx6",
     .flags         = 0,
     .local         = 0,
     .init          = NULL,
@@ -792,7 +914,7 @@ machine_at_bx6_init(const machine_t *model)
     ret = bios_load_linear(fn, 0x000e0000, 131072, 0);
     device_context_restore();
 
-    machine_at_common_init_ex(model, 2);
+    machine_at_common_init(model);
 
     pci_init(PCI_CONFIG_TYPE_1);
     pci_register_slot(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0);
@@ -823,7 +945,7 @@ machine_at_p2bls_init(const machine_t *model)
     if (bios_only || !ret)
         return ret;
 
-    machine_at_common_init_ex(model, 2);
+    machine_at_common_init(model);
 
     pci_init(PCI_CONFIG_TYPE_1);
     pci_register_slot(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0);
@@ -862,7 +984,7 @@ machine_at_p3bf_init(const machine_t *model)
     if (bios_only || !ret)
         return ret;
 
-    machine_at_common_init_ex(model, 2);
+    machine_at_common_init(model);
 
     pci_init(PCI_CONFIG_TYPE_1);
     pci_register_slot(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0);
@@ -935,7 +1057,7 @@ static const device_config_t ax6bc_config[] = {
 
 const device_t ax6bc_device = {
     .name          = "AOpen AX6BC",
-    .internal_name = "ax6bc_device",
+    .internal_name = "ax6bc",
     .flags         = 0,
     .local         = 0,
     .init          = NULL,
@@ -962,7 +1084,7 @@ machine_at_ax6bc_init(const machine_t *model)
     ret = bios_load_linear(fn, 0x000c0000, 262144, 0);
     device_context_restore();
 
-    machine_at_common_init_ex(model, 2);
+    machine_at_common_init(model);
 
     pci_init(PCI_CONFIG_TYPE_1);
     pci_register_slot(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0);
@@ -1032,7 +1154,7 @@ static const device_config_t ga686_config[] = {
 
 const device_t ga686_device = {
     .name          = "Gigabyte GA-686BX",
-    .internal_name = "ga686_device",
+    .internal_name = "686bx",
     .flags         = 0,
     .local         = 0,
     .init          = NULL,
@@ -1059,7 +1181,7 @@ machine_at_ga686_init(const machine_t *model)
     ret = bios_load_linear(fn, 0x000c0000, 262144, 0);
     device_context_restore();
 
-    machine_at_common_init_ex(model, 2);
+    machine_at_common_init(model);
 
     pci_init(PCI_CONFIG_TYPE_1);
     pci_register_slot(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0);
@@ -1151,7 +1273,7 @@ static const device_config_t ms6119_config[] = {
 
 const device_t ms6119_device = {
     .name          = "MSI MS-6119",
-    .internal_name = "ms6119_device",
+    .internal_name = "ms6119",
     .flags         = 0,
     .local         = 0,
     .init          = NULL,
@@ -1178,7 +1300,7 @@ machine_at_ms6119_init(const machine_t *model)
     ret = bios_load_linear(fn, 0x000c0000, 262144, 0);
     device_context_restore();
 
-    machine_at_common_init_ex(model, 2);
+    machine_at_common_init(model);
 
     pci_init(PCI_CONFIG_TYPE_1);
     pci_register_slot(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0);
@@ -1273,7 +1395,7 @@ machine_at_ms6147_init(const machine_t *model)
     ret = bios_load_linear(fn, 0x000c0000, 262144, 0);
     device_context_restore();
 
-    machine_at_common_init_ex(model, 2);
+    machine_at_common_init(model);
 
     pci_init(PCI_CONFIG_TYPE_1);
     pci_register_slot(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0);
@@ -1336,7 +1458,7 @@ static const device_config_t p6sba_config[] = {
 
 const device_t p6sba_device = {
     .name          = "Supermicro P6SBA",
-    .internal_name = "p6sba_device",
+    .internal_name = "p6sba",
     .flags         = 0,
     .local         = 0,
     .init          = NULL,
@@ -1363,7 +1485,7 @@ machine_at_p6sba_init(const machine_t *model)
     ret = bios_load_linear(fn, 0x000c0000, 262144, 0);
     device_context_restore();
 
-    machine_at_common_init_ex(model, 2);
+    machine_at_common_init(model);
 
     pci_init(PCI_CONFIG_TYPE_1);
     pci_register_slot(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0);
@@ -1426,7 +1548,7 @@ static const device_config_t s1846_config[] = {
 
 const device_t s1846_device = {
     .name          = "Tyan Tsunami ATX",
-    .internal_name = "s1846_device",
+    .internal_name = "s1846",
     .flags         = 0,
     .local         = 0,
     .init          = NULL,
@@ -1453,7 +1575,7 @@ machine_at_s1846_init(const machine_t *model)
     ret = bios_load_linear(fn, 0x000c0000, 262144, 0);
     device_context_restore();
 
-    machine_at_common_init_ex(model, 2);
+    machine_at_common_init(model);
 
     pci_init(PCI_CONFIG_TYPE_1);
     pci_register_slot(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0);
@@ -1528,7 +1650,7 @@ static const device_config_t vei8_config[] = {
 
 const device_t vei8_device = {
     .name          = "MiTAC/Trigon 6110Zu",
-    .internal_name = "vei8_device",
+    .internal_name = "vei8",
     .flags         = 0,
     .local         = 0,
     .init          = NULL,
@@ -1556,7 +1678,7 @@ machine_at_vei8_init(const machine_t *model)
     ret = bios_load_linear(fn, 0x000c0000, 262144, 0);
     device_context_restore();
 
-    machine_at_common_init_ex(model, 2);
+    machine_at_common_init(model);
 
     pci_init(PCI_CONFIG_TYPE_1);
     pci_register_slot(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0);
@@ -1580,7 +1702,7 @@ machine_at_vei8_init(const machine_t *model)
 static void
 machine_at_ms6168_common_init(const machine_t *model)
 {
-    machine_at_common_init_ex(model, 2);
+    machine_at_common_init(model);
 
     pci_init(PCI_CONFIG_TYPE_1);
     pci_register_slot(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0);
@@ -1651,7 +1773,7 @@ machine_at_atc6310bxii_init(const machine_t *model)
     if (bios_only || !ret)
         return ret;
 
-    machine_at_common_init_ex(model, 2);
+    machine_at_common_init(model);
 
     pci_init(PCI_CONFIG_TYPE_1);
     pci_register_slot(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0);
@@ -1683,7 +1805,7 @@ machine_at_ficka6130_init(const machine_t *model)
     if (bios_only || !ret)
         return ret;
 
-    machine_at_common_init_ex(model, 2);
+    machine_at_common_init(model);
 
     pci_init(PCI_CONFIG_TYPE_1);
     pci_register_slot(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0);
@@ -1704,18 +1826,91 @@ machine_at_ficka6130_init(const machine_t *model)
 }
 
 /* VIA Apollo Pro 133 */
+static const device_config_t p3v133_config[] = {
+    // clang-format off
+    {
+        .name           = "bios",
+        .description    = "BIOS Version",
+        .type           = CONFIG_BIOS,
+        .default_string = "p3v133",
+        .default_int    = 0,
+        .file_filter    = NULL,
+        .spinner        = { 0 },
+        .selection      = { { 0 } },
+        .bios           = {
+            {
+                .name          = "Award Medallion BIOS v6.0 - Revision 1001a",
+                .internal_name = "p3v133_1001a",
+                .bios_type     = BIOS_NORMAL,
+                .files_no      = 1,
+                .local         = 0,
+                .size          = 262144,
+                .files         = { "roms/machines/p3v133/p3v133a1.awd", "" }
+            },
+            {
+                .name          = "Award Medallion BIOS v6.0 - Revision 1002",
+                .internal_name = "p3v133",
+                .bios_type     = BIOS_NORMAL,
+                .files_no      = 1,
+                .local         = 0,
+                .size          = 262144,
+                .files         = { "roms/machines/p3v133/p3v13302.awd", "" }
+            },
+            {
+                .name          = "Award Medallion BIOS v6.0 - Revision 1003 Beta 002",
+                .internal_name = "p3v133_1003b002",
+                .bios_type     = BIOS_NORMAL,
+                .files_no      = 1,
+                .local         = 0,
+                .size          = 262144,
+                .files         = { "roms/machines/p3v133/1003.002", "" }
+            },
+            {
+                .name          = "Award Medallion BIOS v6.0 - Revision 0.18 (HP NetServer E200)",
+                .internal_name = "p3v133_hp018",
+                .bios_type     = BIOS_NORMAL,
+                .files_no      = 1,
+                .local         = 0,
+                .size          = 262144,
+                .files         = { "roms/machines/p3v133/SST39SF020A-01.BIN", "" }
+            },
+            { .files_no = 0 }
+        }
+    },
+    { .name = "", .description = "", .type = CONFIG_END }
+    // clang-format on
+};
+
+const device_t p3v133_device = {
+    .name          = "ASUS P3V133",
+    .internal_name = "p3v133",
+    .flags         = 0,
+    .local         = 0,
+    .init          = NULL,
+    .close         = NULL,
+    .reset         = NULL,
+    .available     = NULL,
+    .speed_changed = NULL,
+    .force_redraw  = NULL,
+    .config        = p3v133_config
+};
+
 int
 machine_at_p3v133_init(const machine_t *model)
 {
-    int ret;
+    int         ret = 0;
+    const char *fn;
 
-    ret = bios_load_linear("roms/machines/p3v133/1003.002",
-                           0x000c0000, 262144, 0);
-
-    if (bios_only || !ret)
+    /* No ROMs available */
+    if (!device_available(model->device))
         return ret;
 
-    machine_at_common_init_ex(model, 2);
+    device_context(model->device);
+    fn  = device_get_bios_file(machine_get_device(machine), device_get_config_bios("bios"), 0);
+    ret = bios_load_linear(fn, 0x000c0000, 262144, 0);
+    device_context_restore();
+
+    machine_at_common_init(model);
 
     pci_init(PCI_CONFIG_TYPE_1);
     pci_register_slot(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0);
@@ -1798,7 +1993,7 @@ static const device_config_t ms6199va_config[] = {
 
 const device_t ms6199va_device = {
     .name          = "MSI MS-6199VA",
-    .internal_name = "ms6199va_device",
+    .internal_name = "ms6199va",
     .flags         = 0,
     .local         = 0,
     .init          = NULL,
@@ -1825,7 +2020,7 @@ machine_at_ms6199va_init(const machine_t *model)
     ret = bios_load_linear(fn, 0x000c0000, 262144, 0);
     device_context_restore();
 
-    machine_at_common_init_ex(model, 2);
+    machine_at_common_init(model);
 
     pci_init(PCI_CONFIG_TYPE_1);
     pci_register_slot(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0);
@@ -1866,7 +2061,7 @@ machine_at_p3v4x_init(const machine_t *model)
     if (bios_only || !ret)
         return ret;
 
-    machine_at_common_init_ex(model, 2);
+    machine_at_common_init(model);
 
     pci_init(PCI_CONFIG_TYPE_1);
     pci_register_slot(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0);
@@ -1901,7 +2096,7 @@ machine_at_gt694va_init(const machine_t *model)
     if (bios_only || !ret)
         return ret;
 
-    machine_at_common_init_ex(model, 2);
+    machine_at_common_init(model);
 
     pci_init(PCI_CONFIG_TYPE_1);
     pci_register_slot(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0);
@@ -1944,7 +2139,7 @@ machine_at_p6f99_init(const machine_t *model)
     if (bios_only || !ret)
         return ret;
 
-    machine_at_common_init_ex(model, 2);
+    machine_at_common_init(model);
 
     pci_init(PCI_CONFIG_TYPE_1 | FLAG_TRC_CONTROLS_CPURST);
     pci_register_slot(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0);
@@ -1979,7 +2174,7 @@ machine_at_m747_init(const machine_t *model)
     if (bios_only || !ret)
         return ret;
 
-    machine_at_common_init_ex(model, 2);
+    machine_at_common_init(model);
 
     pci_init(PCI_CONFIG_TYPE_1 | FLAG_TRC_CONTROLS_CPURST);
     pci_register_slot(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0);

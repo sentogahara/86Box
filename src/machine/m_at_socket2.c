@@ -50,18 +50,75 @@
 #include <86box/sound.h>
 
 /* ACC 2168 */
+static const device_config_t pb410a_config[] = {
+    // clang-format off
+    {
+        .name           = "bios",
+        .description    = "BIOS Version",
+        .type           = CONFIG_BIOS,
+        .default_string = "pb410a",
+        .default_int    = 0,
+        .file_filter    = NULL,
+        .spinner        = { 0 },
+        .selection      = { { 0 } },
+        .bios           = {
+            {
+                .name          = "PhoenixBIOS A486 - Revision 1.01.E",
+                .internal_name = "pb410a",
+                .bios_type     = BIOS_NORMAL,
+                .files_no      = 1,
+                .local         = 0,
+                .size          = 131072,
+                .files         = { "roms/machines/pb410a/pb410a.080337.4abf.u25.bin", "" }
+            },
+            {
+                .name          = "PhoenixBIOS 4.05 - Revision P4HS10 (by Micro Firmware)",
+                .internal_name = "pb410a_p4hs10",
+                .bios_type     = BIOS_NORMAL,
+                .files_no      = 1,
+                .local         = 0,
+                .size          = 131072,
+                .files         = { "roms/machines/pb410a/p4hs10.bin", "" }
+            },
+            { .files_no = 0 }
+        }
+    },
+    { .name = "", .description = "", .type = CONFIG_END }
+    // clang-format on
+};
+
+const device_t pb410a_device = {
+    .name          = "Packard Bell PB410A",
+    .internal_name = "pb410a",
+    .flags         = 0,
+    .local         = 0,
+    .init          = NULL,
+    .close         = NULL,
+    .reset         = NULL,
+    .available     = NULL,
+    .speed_changed = NULL,
+    .force_redraw  = NULL,
+    .config        = pb410a_config
+};
 int
 machine_at_pb410a_init(const machine_t *model)
 {
-    int ret;
+    int         ret = 0;
+    const char *fn;
 
-    ret = bios_load_linear("roms/machines/pb410a/pb410a.080337.4abf.u25.bin",
-                           0x000e0000, 131072, 0);
+    /* No ROMs available */
+    if (!device_available(model->device))
+        return ret;
+
+    device_context(model->device);
+    fn  = device_get_bios_file(machine_get_device(machine), device_get_config_bios("bios"), 0);
+    ret = bios_load_linear(fn, 0x000e0000, 131072, 0);
+    device_context_restore();
 
     if (bios_only || !ret)
         return ret;
 
-    machine_at_ibm_common_ide_init(model);
+    machine_at_common_ide_init(model);
 
     device_add_params(machine_get_kbc_device(machine), (void *) model->kbc_params);
 
@@ -77,6 +134,38 @@ machine_at_pb410a_init(const machine_t *model)
 }
 
 /* ALi M1429G */
+static void
+machine_at_ali1429_common_init(const machine_t *model, int is_green)
+{
+    machine_at_common_init(model);
+
+    if (is_green)
+        device_add(&ali1429g_device);
+    else
+        device_add(&ali1429_device);
+
+    device_add_params(machine_get_kbc_device(machine), (void *) model->kbc_params);
+
+    if (fdc_current[0] == FDC_INTERNAL)
+        device_add(&fdc_at_device);
+}
+
+int
+machine_at_ali1429_init(const machine_t *model)
+{
+    int ret;
+
+    ret = bios_load_linear("roms/machines/ali1429/ami486.BIN",
+                           0x000f0000, 65536, 0);
+
+    if (bios_only || !ret)
+        return ret;
+
+    machine_at_ali1429_common_init(model, 0);
+
+    return ret;
+}
+
 int
 machine_at_acera1g_init(const machine_t *model)
 {
@@ -102,22 +191,6 @@ machine_at_acera1g_init(const machine_t *model)
     return ret;
 }
 
-static void
-machine_at_ali1429_common_init(const machine_t *model, int is_green)
-{
-    machine_at_common_init(model);
-
-    if (is_green)
-        device_add(&ali1429g_device);
-    else
-        device_add(&ali1429_device);
-
-    device_add_params(machine_get_kbc_device(machine), (void *) model->kbc_params);
-
-    if (fdc_current[0] == FDC_INTERNAL)
-        device_add(&fdc_at_device);
-}
-
 int
 machine_at_winbios1429_init(const machine_t *model)
 {
@@ -130,22 +203,6 @@ machine_at_winbios1429_init(const machine_t *model)
         return ret;
 
     machine_at_ali1429_common_init(model, 1);
-
-    return ret;
-}
-
-int
-machine_at_ali1429_init(const machine_t *model)
-{
-    int ret;
-
-    ret = bios_load_linear("roms/machines/ali1429/ami486.BIN",
-                           0x000f0000, 65536, 0);
-
-    if (bios_only || !ret)
-        return ret;
-
-    machine_at_ali1429_common_init(model, 0);
 
     return ret;
 }
@@ -199,8 +256,7 @@ machine_at_g486ip_init(const machine_t *model)
     if (bios_only || !ret)
         return ret;
 
-    machine_at_common_init_ex(model, 2);
-    device_add(&ami_1992_nvr_device);
+    machine_at_common_init(model);
 
     pci_init(PCI_CONFIG_TYPE_1);
     pci_register_slot(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0);
@@ -219,32 +275,6 @@ machine_at_g486ip_init(const machine_t *model)
 }
 
 /* OPTi 499 */
-int
-machine_at_cobalt_init(const machine_t *model)
-{
-    int ret;
-
-    ret = bios_load_linear("roms/machines/cobalt/Cobalt_2.3.BIN",
-                           0x000e0000, 131072, 0);
-
-    if (bios_only || !ret)
-        return ret;
-
-    machine_at_common_init(model);
-
-    device_add(&opti499_device);
-    device_add(&ide_opti611_vlb_device);
-    device_add(&ide_isa_sec_device);
-    device_add_params(&fdc37c6xx_device, (void *) FDC37C665);
-
-    device_add_params(machine_get_kbc_device(machine), (void *) model->kbc_params);
-
-    if (gfxcard[0] == VID_INTERNAL)
-        device_add(machine_get_vid_device(machine));
-
-    return ret;
-}
-
 int
 machine_at_cougar_init(const machine_t *model)
 {
@@ -266,6 +296,30 @@ machine_at_cougar_init(const machine_t *model)
 
     if (fdc_current[0] == FDC_INTERNAL)
         device_add(&fdc_at_device);
+
+    return ret;
+}
+
+/* SiS 460 */
+int
+machine_at_spc7500p_init(const machine_t *model)
+{
+    int ret;
+
+    ret = bios_load_linear("roms/machines/spc7500p/7500NOSC.BIN",
+                           0x000e0000, 131072, 0);
+
+    if (bios_only || !ret)
+        return ret;
+
+    machine_at_common_init(model);
+
+    device_add(&sis_85c460_device);
+
+    device_add_params(machine_get_kbc_device(machine), (void *) model->kbc_params);
+
+    device_add(&ide_vlb_device);
+    device_add_params(&pc87310_device, (void *) PCX73XX_IDE);
 
     return ret;
 }
@@ -380,7 +434,7 @@ machine_at_monsoon_init(const machine_t *model)
     if (bios_only || !ret)
         return ret;
 
-    machine_at_common_init_ex(model, 2);
+    machine_at_common_init(model);
 
     device_add(&vl82c480_device);
     device_add(&vl82c113_device);
@@ -389,6 +443,7 @@ machine_at_monsoon_init(const machine_t *model)
     device_add_params(&fdc37c6xx_device, (void *) (FDC37C651 | FDC37C6XX_IDE_PRI));
 
     device_add(&intel_flash_bxt_device);
+    device_add(&phoenix_486_jumper_monsoon_device);
 
     if (gfxcard[0] == VID_INTERNAL)
         device_add(machine_get_vid_device(machine));
@@ -407,7 +462,7 @@ machine_at_martin_init(const machine_t *model)
     if (bios_only || !ret)
         return ret;
 
-    machine_at_common_init_ex(model, 2);
+    machine_at_common_init(model);
 
     device_add(&vl82c480_device);
     device_add(&vl82c113_device);

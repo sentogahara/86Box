@@ -107,8 +107,6 @@ static fdc_cards_t fdc_cards[] = {
     // clang-format off
     { &device_none               },
     { &device_internal           },
-    { &fdc_xt_device             },
-    { &fdc_at_device             },
     { &fdc_b215_device           },
     { &fdc_pii151b_device        },
     { &fdc_pii158b_device        },
@@ -118,6 +116,13 @@ static fdc_cards_t fdc_cards[] = {
     { &fdc_compaticard_iv_device },
 #endif
     { &fdc_monster_device        },
+    { &fdc_at_device             },
+    { &fdc_at_nsc_dp8473_device  },
+    { &fdc_at_nsc_device         }, /* TODO: PC87311 SIO & floppy controller */
+    { &fdc_at_smc_device         },
+    { &fdc_at_winbond_device     },
+    { &fdc_xt_device             },
+    { &fdc_xt_umc_um8398_device  },
     { NULL                       }
     // clang-format on
 };
@@ -2443,7 +2448,11 @@ fdc_set_base(fdc_t *fdc, int base)
     }
 
     if (fdc->flags & FDC_FLAG_NSC) {
-        io_sethandler(base + 2, 0x0004, fdc_read, NULL, NULL, fdc_write, NULL, NULL, fdc);
+        if (fdc->flags & FDC_FLAG_NO_TDR) {
+            io_sethandler(base + 2, 0x0001, fdc_read, NULL, NULL, fdc_write, NULL, NULL, fdc);
+            io_sethandler(base + 4, 0x0002, fdc_read, NULL, NULL, fdc_write, NULL, NULL, fdc);
+        } else
+            io_sethandler(base + 2, 0x0004, fdc_read, NULL, NULL, fdc_write, NULL, NULL, fdc);
         io_sethandler(base + 7, 0x0001, fdc_read, NULL, NULL, fdc_write, NULL, NULL, fdc);
     } else if (fdc->flags & FDC_FLAG_5550) {
         io_sethandler(base, 0x0003, fdc_read, NULL, NULL, fdc_write, NULL, NULL, fdc);
@@ -2481,7 +2490,11 @@ fdc_remove(fdc_t *fdc)
 
     fdc_log("FDC Removed (%04X)\n", fdc->base_address);
     if (fdc->flags & FDC_FLAG_NSC) {
-        io_removehandler(fdc->base_address + 2, 0x0004, fdc_read, NULL, NULL, fdc_write, NULL, NULL, fdc);
+        if (fdc->flags & FDC_FLAG_NO_TDR) {
+            io_removehandler(fdc->base_address + 2, 0x0001, fdc_read, NULL, NULL, fdc_write, NULL, NULL, fdc);
+            io_removehandler(fdc->base_address + 4, 0x0002, fdc_read, NULL, NULL, fdc_write, NULL, NULL, fdc);
+        } else
+            io_removehandler(fdc->base_address + 2, 0x0004, fdc_read, NULL, NULL, fdc_write, NULL, NULL, fdc);
         io_removehandler(fdc->base_address + 7, 0x0001, fdc_read, NULL, NULL, fdc_write, NULL, NULL, fdc);
     } else if (fdc->flags & FDC_FLAG_5550) {
         io_removehandler(fdc->base_address, 0x0003, fdc_read, NULL, NULL, fdc_write, NULL, NULL, fdc);
@@ -2681,9 +2694,9 @@ fdc_3f1_enable(fdc_t *fdc, int enable)
 }
 
 const device_t fdc_xt_device = {
-    .name          = "PC/XT Floppy Drive Controller",
+    .name          = "PC/XT FDC",
     .internal_name = "fdc_xt",
-    .flags         = 0,
+    .flags         = DEVICE_ISA,
     .local         = 0,
     .init          = fdc_init,
     .close         = fdc_close,
@@ -2695,7 +2708,7 @@ const device_t fdc_xt_device = {
 };
 
 const device_t fdc_xt_sec_device = {
-    .name          = "PC/XT Floppy Drive Controller (Secondary)",
+    .name          = "PC/XT FDC (Secondary)",
     .internal_name = "fdc_xt_sec",
     .flags         = FDC_FLAG_SEC,
     .local         = 0,
@@ -2709,7 +2722,7 @@ const device_t fdc_xt_sec_device = {
 };
 
 const device_t fdc_xt_ter_device = {
-    .name          = "PC/XT Floppy Drive Controller (Tertiary)",
+    .name          = "PC/XT FDC (Tertiary)",
     .internal_name = "fdc_xt_ter",
     .flags         = FDC_FLAG_TER,
     .local         = 0,
@@ -2723,7 +2736,7 @@ const device_t fdc_xt_ter_device = {
 };
 
 const device_t fdc_xt_qua_device = {
-    .name          = "PC/XT Floppy Drive Controller (Quaternary)",
+    .name          = "PC/XT FDC (Quaternary)",
     .internal_name = "fdc_xt_qua",
     .flags         = FDC_FLAG_QUA,
     .local         = 0,
@@ -2737,7 +2750,7 @@ const device_t fdc_xt_qua_device = {
 };
 
 const device_t fdc_xt_t1x00_device = {
-    .name          = "PC/XT Floppy Drive Controller (Toshiba)",
+    .name          = "PC/XT FDC (Toshiba)",
     .internal_name = "fdc_xt_t1x00",
     .flags         = 0,
     .local         = FDC_FLAG_TOSHIBA,
@@ -2751,7 +2764,7 @@ const device_t fdc_xt_t1x00_device = {
 };
 
 const device_t fdc_xt_amstrad_device = {
-    .name          = "PC/XT Floppy Drive Controller (Amstrad)",
+    .name          = "PC/XT FDC (Amstrad)",
     .internal_name = "fdc_xt_amstrad",
     .flags         = 0,
     .local         = FDC_FLAG_DISKCHG_ACTLOW | FDC_FLAG_AMSTRAD,
@@ -2765,7 +2778,7 @@ const device_t fdc_xt_amstrad_device = {
 };
 
 const device_t fdc_xt_tandy_device = {
-    .name          = "PC/XT Floppy Drive Controller (Tandy)",
+    .name          = "PC/XT FDC (Tandy)",
     .internal_name = "fdc_xt_tandy",
     .flags         = 0,
     .local         = FDC_FLAG_AMSTRAD,
@@ -2779,9 +2792,9 @@ const device_t fdc_xt_tandy_device = {
 };
 
 const device_t fdc_xt_umc_um8398_device = {
-    .name          = "PC/XT Floppy Drive Controller (UMC UM8398)",
+    .name          = "PC/XT FDC (UMC UM8398)",
     .internal_name = "fdc_xt_umc_um8398",
-    .flags         = 0,
+    .flags         = DEVICE_ISA,
     .local         = FDC_FLAG_UMC,
     .init          = fdc_init,
     .close         = fdc_close,
@@ -2793,7 +2806,7 @@ const device_t fdc_xt_umc_um8398_device = {
 };
 
 const device_t fdc_xt_5550_device = {
-    .name          = "IBM 5550 Floppy Drive Controller",
+    .name          = "IBM 5550 FDC",
     .internal_name = "fdc_xt_5550",
     .flags         = 0,
     .local         = FDC_FLAG_5550,
@@ -2807,7 +2820,7 @@ const device_t fdc_xt_5550_device = {
 };
 
 const device_t fdc_pcjr_device = {
-    .name          = "PCjr Floppy Drive Controller",
+    .name          = "PCjr FDC",
     .internal_name = "fdc_pcjr",
     .flags         = 0,
     .local         = FDC_FLAG_PCJR,
@@ -2821,9 +2834,9 @@ const device_t fdc_pcjr_device = {
 };
 
 const device_t fdc_at_device = {
-    .name          = "PC/AT Floppy Drive Controller",
+    .name          = "PC/AT FDC",
     .internal_name = "fdc_at",
-    .flags         = 0,
+    .flags         = DEVICE_ISA,
     .local         = FDC_FLAG_AT,
     .init          = fdc_init,
     .close         = fdc_close,
@@ -2835,7 +2848,7 @@ const device_t fdc_at_device = {
 };
 
 const device_t fdc_at_sec_device = {
-    .name          = "PC/AT Floppy Drive Controller (Secondary)",
+    .name          = "PC/AT FDC (Secondary)",
     .internal_name = "fdc_at_sec",
     .flags         = 0,
     .local         = FDC_FLAG_AT | FDC_FLAG_SEC,
@@ -2849,7 +2862,7 @@ const device_t fdc_at_sec_device = {
 };
 
 const device_t fdc_at_ter_device = {
-    .name          = "PC/AT Floppy Drive Controller (Tertiary)",
+    .name          = "PC/AT FDC (Tertiary)",
     .internal_name = "fdc_at_ter",
     .flags         = 0,
     .local         = FDC_FLAG_AT | FDC_FLAG_TER,
@@ -2863,7 +2876,7 @@ const device_t fdc_at_ter_device = {
 };
 
 const device_t fdc_at_qua_device = {
-    .name          = "PC/AT Floppy Drive Controller (Quaternary)",
+    .name          = "PC/AT FDC (Quaternary)",
     .internal_name = "fdc_at_qua",
     .flags         = 0,
     .local         = FDC_FLAG_AT | FDC_FLAG_QUA,
@@ -2877,7 +2890,7 @@ const device_t fdc_at_qua_device = {
 };
 
 const device_t fdc_at_actlow_device = {
-    .name          = "PC/AT Floppy Drive Controller (Active low)",
+    .name          = "PC/AT FDC (Active low)",
     .internal_name = "fdc_at_actlow",
     .flags         = 0,
     .local         = FDC_FLAG_DISKCHG_ACTLOW | FDC_FLAG_AT,
@@ -2891,7 +2904,7 @@ const device_t fdc_at_actlow_device = {
 };
 
 const device_t fdc_at_smc_661_device = {
-    .name          = "PC/AT Floppy Drive Controller (SM(s)C FDC37C661/2)",
+    .name          = "PC/AT FDC (SM(s)C FDC37C661/2)",
     .internal_name = "fdc_at_smc",
     .flags         = 0,
     .local         = FDC_FLAG_AT | FDC_FLAG_SUPERIO | FDC_FLAG_SMC661,
@@ -2905,9 +2918,9 @@ const device_t fdc_at_smc_661_device = {
 };
 
 const device_t fdc_at_smc_device = {
-    .name          = "PC/AT Floppy Drive Controller (SM(s)C FDC37Cxxx)",
+    .name          = "PC/AT FDC (SM(s)C FDC37Cxxx)",
     .internal_name = "fdc_at_smc",
-    .flags         = 0,
+    .flags         = DEVICE_ISA,
     .local         = FDC_FLAG_AT | FDC_FLAG_SUPERIO,
     .init          = fdc_init,
     .close         = fdc_close,
@@ -2919,7 +2932,7 @@ const device_t fdc_at_smc_device = {
 };
 
 const device_t fdc_at_ali_device = {
-    .name          = "PC/AT Floppy Drive Controller (ALi M512x/M1543C)",
+    .name          = "PC/AT FDC (ALi M512x/M1543C)",
     .internal_name = "fdc_at_ali",
     .flags         = 0,
     .local         = FDC_FLAG_AT | FDC_FLAG_SUPERIO | FDC_FLAG_ALI,
@@ -2933,9 +2946,9 @@ const device_t fdc_at_ali_device = {
 };
 
 const device_t fdc_at_winbond_device = {
-    .name          = "PC/AT Floppy Drive Controller (Winbond W83x77F)",
+    .name          = "PC/AT FDC (Winbond W83x77F)",
     .internal_name = "fdc_at_winbond",
-    .flags         = 0,
+    .flags         = DEVICE_ISA,
     .local         = FDC_FLAG_AT | FDC_FLAG_SUPERIO | FDC_FLAG_START_RWC_1 | FDC_FLAG_MORE_TRACKS,
     .init          = fdc_init,
     .close         = fdc_close,
@@ -2947,9 +2960,9 @@ const device_t fdc_at_winbond_device = {
 };
 
 const device_t fdc_at_nsc_device = {
-    .name          = "PC/AT Floppy Drive Controller (NSC PC8730x)",
+    .name          = "PC/AT FDC (NSC PC8730x)",
     .internal_name = "fdc_at_nsc",
-    .flags         = 0,
+    .flags         = DEVICE_ISA,
     .local         = FDC_FLAG_AT | FDC_FLAG_MORE_TRACKS | FDC_FLAG_NSC,
     .init          = fdc_init,
     .close         = fdc_close,
@@ -2960,10 +2973,24 @@ const device_t fdc_at_nsc_device = {
     .config        = NULL
 };
 
+const device_t fdc_at_nsc_pc87310_device = {
+    .name          = "PC/AT FDC (NSC PC87310)",
+    .internal_name = "fdc_at_nsc",
+    .flags         = DEVICE_ISA,
+    .local         = FDC_FLAG_AT | FDC_FLAG_MORE_TRACKS | FDC_FLAG_NSC | FDC_FLAG_NO_TDR,
+    .init          = fdc_init,
+    .close         = fdc_close,
+    .reset         = fdc_reset,
+    .available     = NULL,
+    .speed_changed = NULL,
+    .force_redraw  = NULL,
+    .config        = NULL
+};
+
 const device_t fdc_at_nsc_dp8473_device = {
-    .name          = "PC/AT Floppy Drive Controller (NSC DP8473)",
+    .name          = "PC/AT FDC (NSC DP8473)",
     .internal_name = "fdc_at_nsc_dp8473",
-    .flags         = 0,
+    .flags         = DEVICE_ISA,
     .local         = FDC_FLAG_AT | FDC_FLAG_NEC | FDC_FLAG_NO_DSR_RESET,
     .init          = fdc_init,
     .close         = fdc_close,
@@ -2975,7 +3002,7 @@ const device_t fdc_at_nsc_dp8473_device = {
 };
 
 const device_t fdc_ps2_device = {
-    .name          = "PS/2 Model 25/30 Floppy Drive Controller",
+    .name          = "PS/2 Model 25/30 FDC",
     .internal_name = "fdc_ps2",
     .flags         = 0,
     .local         = FDC_FLAG_FINTR | FDC_FLAG_DENSEL_INVERT | FDC_FLAG_NO_DSR_RESET | FDC_FLAG_DISKCHG_ACTLOW |
@@ -2990,7 +3017,7 @@ const device_t fdc_ps2_device = {
 };
 
 const device_t fdc_ps2_mca_device = {
-    .name          = "PS/2 MCA Floppy Drive Controller",
+    .name          = "PS/2 MCA FDC",
     .internal_name = "fdc_ps2_mca",
     .flags         = 0,
     .local         = FDC_FLAG_FINTR | FDC_FLAG_DENSEL_INVERT | FDC_FLAG_NO_DSR_RESET | FDC_FLAG_AT |

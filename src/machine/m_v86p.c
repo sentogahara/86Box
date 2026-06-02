@@ -54,7 +54,7 @@ static const device_config_t v86p_config[] = {
         .name           = "bios",
         .description    = "BIOS Version",
         .type           = CONFIG_BIOS,
-        .default_string = "v86p_122089",
+        .default_string = "v86p",
         .default_int    = 0,
         .file_filter    = NULL,
         .spinner        = { 0 },
@@ -62,7 +62,7 @@ static const device_config_t v86p_config[] = {
         .bios           = {
             {
                 .name          = "12/20/89",
-                .internal_name = "v86p_122089",
+                .internal_name = "v86p",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 2,
                 .local         = 0,
@@ -101,7 +101,7 @@ static const device_config_t v86p_config[] = {
 
 const device_t v86p_device = {
     .name          = "Victor V86P",
-    .internal_name = "v86p_device",
+    .internal_name = "v86p",
     .flags         = 0,
     .local         = 0,
     .init          = NULL,

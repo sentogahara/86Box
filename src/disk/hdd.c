@@ -48,22 +48,11 @@ hdd_string_to_bus(char *str, int cdrom)
     if (!strcmp(str, "none"))
         return HDD_BUS_DISABLED;
 
-    if (!strcmp(str, "mfm")) {
-        if (cdrom) {
-no_cdrom:
-            ui_msgbox_header(MBX_ERROR, plat_get_string(STRING_INVALID_CONFIG), plat_get_string(STRING_NO_ST506_ESDI_CDROM));
-            return 0;
-        }
-
+    if (!strcmp(str, "mfm") && !cdrom)
         return HDD_BUS_MFM;
-    }
 
-    if (!strcmp(str, "esdi")) {
-        if (cdrom)
-            goto no_cdrom;
-
+    if (!strcmp(str, "esdi") && !cdrom)
         return HDD_BUS_ESDI;
-    }
 
     if (!strcmp(str, "ide"))
         return HDD_BUS_IDE;
@@ -77,38 +66,28 @@ no_cdrom:
     if (!strcmp(str, "scsi"))
         return HDD_BUS_SCSI;
     
-    if (!strcmp(str, "mitsumi"))
+    if (!strcmp(str, "mitsumi") && cdrom)
         return CDROM_BUS_MITSUMI;
 
-    if (!strcmp(str, "mke"))
+    if (!strcmp(str, "mke") && cdrom)
         return CDROM_BUS_MKE;
 
-    return 0;
+    return HDD_BUS_DISABLED;
 }
 
 char *
-hdd_bus_to_string(int bus, UNUSED(int cdrom))
+hdd_bus_to_string(int bus, int cdrom)
 {
     char *s = "none";
 
     switch (bus) {
         default:
-        if (cdrom) {
-            switch (bus) {
-                case CDROM_BUS_MITSUMI:
-                    s = "mitsumi";
-                    break;
-                case CDROM_BUS_MKE:
-                    s = "mke";
-                    break;
-            }
-            break;
-        }
         case HDD_BUS_DISABLED:
             break;
 
         case HDD_BUS_MFM:
-            s = "mfm";
+            if (!cdrom)
+                s = "mfm";
             break;
 
         case HDD_BUS_XTA:
@@ -116,7 +95,8 @@ hdd_bus_to_string(int bus, UNUSED(int cdrom))
             break;
 
         case HDD_BUS_ESDI:
-            s = "esdi";
+            if (!cdrom)
+                s = "esdi";
             break;
 
         case HDD_BUS_IDE:
@@ -129,6 +109,16 @@ hdd_bus_to_string(int bus, UNUSED(int cdrom))
 
         case HDD_BUS_SCSI:
             s = "scsi";
+            break;
+
+        case CDROM_BUS_MITSUMI:
+            if (cdrom)
+                s = "mitsumi";
+            break;
+
+        case CDROM_BUS_MKE:
+            if (cdrom)
+                s = "mke";
             break;
     }
 
@@ -430,6 +420,8 @@ hdd_zones_init(hard_disk_t *hdd)
 static hdd_preset_t hdd_speed_presets[] = {
   // clang-format off
     { .name = "[Generic] RAM Disk (max. speed)",                  .internal_name = "ramdisk",                                                                                                                                                                                 .rcache_num_seg = 16, .rcache_seg_size =  128, .max_multiple = 32 },
+    { .name = "[Generic] 1983 MFM (3600 RPM)",                    .internal_name = "mfm_3600rpm",                                                                          .zones =  1, .avg_spt =  17, .heads =  4, .rpm = 3600, .full_stroke_ms = 80, .track_seek_ms = 10,  .rcache_num_seg =  1, .rcache_seg_size =   17, .max_multiple =  1 },
+    { .name = "[Generic] 1983 RLL (3600 RPM)",                    .internal_name = "rll_3600rpm",                                                                          .zones =  1, .avg_spt =  26, .heads =  4, .rpm = 3600, .full_stroke_ms = 80, .track_seek_ms = 10,  .rcache_num_seg =  1, .rcache_seg_size =   26, .max_multiple =  1 },
     { .name = "[Generic] 1989 (3500 RPM)",                        .internal_name = "1989_3500rpm",                                                                         .zones =  1, .avg_spt =  35, .heads =  2, .rpm = 3500, .full_stroke_ms = 40, .track_seek_ms = 8,   .rcache_num_seg =  1, .rcache_seg_size =   16, .max_multiple =  8 },
     { .name = "[Generic] 1992 (3600 RPM)",                        .internal_name = "1992_3600rpm",                                                                         .zones =  1, .avg_spt =  45, .heads =  2, .rpm = 3600, .full_stroke_ms = 30, .track_seek_ms = 6,   .rcache_num_seg =  4, .rcache_seg_size =   16, .max_multiple =  8 },
     { .name = "[Generic] 1994 (4500 RPM)",                        .internal_name = "1994_4500rpm",                                                                         .zones =  8, .avg_spt =  80, .heads =  4, .rpm = 4500, .full_stroke_ms = 26, .track_seek_ms = 5,   .rcache_num_seg =  4, .rcache_seg_size =   32, .max_multiple = 16 },
@@ -437,6 +429,16 @@ static hdd_preset_t hdd_speed_presets[] = {
     { .name = "[Generic] 1997 (5400 RPM)",                        .internal_name = "1997_5400rpm",                                                                         .zones = 16, .avg_spt = 185, .heads =  6, .rpm = 5400, .full_stroke_ms = 20, .track_seek_ms = 2.5, .rcache_num_seg =  8, .rcache_seg_size =   64, .max_multiple = 32 },
     { .name = "[Generic] 1998 (5400 RPM)",                        .internal_name = "1998_5400rpm",                                                                         .zones = 16, .avg_spt = 300, .heads =  8, .rpm = 5400, .full_stroke_ms = 20, .track_seek_ms = 2,   .rcache_num_seg =  8, .rcache_seg_size =  128, .max_multiple = 32 },
     { .name = "[Generic] 2000 (7200 RPM)",                        .internal_name = "2000_7200rpm",                                                                         .zones = 16, .avg_spt = 350, .heads =  6, .rpm = 7200, .full_stroke_ms = 15, .track_seek_ms = 2,   .rcache_num_seg = 16, .rcache_seg_size =  128, .max_multiple = 32 },
+    /* MFM/RLL drives: single zone, 17 spt (MFM) or 26 spt (RLL), 3600 RPM typical */
+    { .name = "[MFM] Seagate ST-225 (20 MB)",                     .internal_name = "ST225",        .model = "ST-225",                                                      .zones =  1, .avg_spt =  17, .heads =  4, .rpm = 3600, .full_stroke_ms = 65, .track_seek_ms = 8,   .rcache_num_seg =  1, .rcache_seg_size =   17, .max_multiple =  1 },
+    { .name = "[MFM] Seagate ST-251 (40 MB)",                     .internal_name = "ST251",        .model = "ST-251",                                                      .zones =  1, .avg_spt =  17, .heads =  6, .rpm = 3600, .full_stroke_ms = 65, .track_seek_ms = 8,   .rcache_num_seg =  1, .rcache_seg_size =   17, .max_multiple =  1 },
+    { .name = "[MFM] Seagate ST-4038 (32 MB)",                    .internal_name = "ST4038",       .model = "ST-4038",                                                     .zones =  1, .avg_spt =  17, .heads =  5, .rpm = 3600, .full_stroke_ms = 80, .track_seek_ms = 10,  .rcache_num_seg =  1, .rcache_seg_size =   17, .max_multiple =  1 },
+    { .name = "[MFM] Seagate ST-4051 (43 MB)",                    .internal_name = "ST4051",       .model = "ST-4051",                                                     .zones =  1, .avg_spt =  17, .heads =  5, .rpm = 3600, .full_stroke_ms = 80, .track_seek_ms = 10,  .rcache_num_seg =  1, .rcache_seg_size =   17, .max_multiple =  1 },
+    { .name = "[MFM] Miniscribe 8425 (21 MB)",                    .internal_name = "MNS8425",      .model = "Miniscribe 8425",                                             .zones =  1, .avg_spt =  17, .heads =  4, .rpm = 3600, .full_stroke_ms = 65, .track_seek_ms = 8,   .rcache_num_seg =  1, .rcache_seg_size =   17, .max_multiple =  1 },
+    { .name = "[MFM] Miniscribe 8438 (32 MB)",                    .internal_name = "MNS8438",      .model = "Miniscribe 8438",                                             .zones =  1, .avg_spt =  17, .heads =  5, .rpm = 3600, .full_stroke_ms = 65, .track_seek_ms = 8,   .rcache_num_seg =  1, .rcache_seg_size =   17, .max_multiple =  1 },
+    { .name = "[MFM] Western Digital WD93028-X (20 MB)",          .internal_name = "WD93028X",     .model = "WD93028-X",                                                   .zones =  1, .avg_spt =  17, .heads =  4, .rpm = 3600, .full_stroke_ms = 75, .track_seek_ms = 10,  .rcache_num_seg =  1, .rcache_seg_size =   17, .max_multiple =  1 },
+    { .name = "[RLL] Seagate ST-238R (32 MB)",                    .internal_name = "ST238R",       .model = "ST-238R",                                                     .zones =  1, .avg_spt =  26, .heads =  4, .rpm = 3600, .full_stroke_ms = 65, .track_seek_ms = 8,   .rcache_num_seg =  1, .rcache_seg_size =   26, .max_multiple =  1 },
+    { .name = "[RLL] Seagate ST-253R (63 MB)",                    .internal_name = "ST253R",       .model = "ST-253R",                                                     .zones =  1, .avg_spt =  26, .heads =  6, .rpm = 3600, .full_stroke_ms = 65, .track_seek_ms = 8,   .rcache_num_seg =  1, .rcache_seg_size =   26, .max_multiple =  1 },
     { .name = "[PIO IDE] IBM WDA-L42",                            .internal_name = "WDAL42",       .model = "WDA-L42",                                                     .zones =  1, .avg_spt =  85, .heads =  2, .rpm = 3600, .full_stroke_ms = 33, .track_seek_ms = 2.5, .rcache_num_seg =  1, .rcache_seg_size =   32, .max_multiple =  1 },
     { .name = "[PIO-2] IBM DSAA-3270",                            .internal_name = "DSAA3270",     .model = "DSAA-3270",                            .version = "25505120", .zones =  8, .avg_spt = 268, .heads =  2, .rpm = 4500, .full_stroke_ms = 25, .track_seek_ms = 2.1, .rcache_num_seg =  3, .rcache_seg_size =   32, .max_multiple =  8 },
     { .name = "[ATA-1] Conner CP3024",                            .internal_name = "CP3024",       .model = "Conner Peripherals 20MB - CP3024",                            .zones =  1, .avg_spt =  33, .heads =  2, .rpm = 3500, .full_stroke_ms = 50, .track_seek_ms = 8,   .rcache_num_seg =  1, .rcache_seg_size =    8, .max_multiple =  8 }, // Needed for GRiDcase 1520 to work
@@ -526,6 +528,10 @@ static hdd_preset_t hdd_speed_presets[] = {
     { .name = "[ATA-4] Quantum Fireball SE4.3A",                  .internal_name = "SE43A011",     .model = "QUANTUM FIREBALL SE4.3A",                                     .zones =  2, .avg_spt = 200, .heads =  4, .rpm = 5400, .full_stroke_ms = 20, .track_seek_ms = 2,   .rcache_num_seg =  8, .rcache_seg_size =  128, .max_multiple = 16 },
     { .name = "[ATA-4] Quantum Fireball SE6.4A",                  .internal_name = "SE64A011",     .model = "QUANTUM FIREBALL SE6.4A",                                     .zones =  3, .avg_spt = 200, .heads =  6, .rpm = 5400, .full_stroke_ms = 20, .track_seek_ms = 2,   .rcache_num_seg =  8, .rcache_seg_size =  128, .max_multiple = 16 },
     { .name = "[ATA-4] Quantum Fireball SE8.4A",                  .internal_name = "SE84A011",     .model = "QUANTUM FIREBALL SE8.4A",                                     .zones =  4, .avg_spt = 200, .heads =  8, .rpm = 5400, .full_stroke_ms = 20, .track_seek_ms = 2,   .rcache_num_seg =  8, .rcache_seg_size =  128, .max_multiple = 16 },
+    { .name = "[ATA-4] Quantum Fireball EL2.5AT",                 .internal_name = "EL25A011",     .model = "QUANTUM FIREBALL EL2.5A",                                     .zones =  1, .avg_spt = 200, .heads =  2, .rpm = 5400, .full_stroke_ms = 18, .track_seek_ms = 2,   .rcache_num_seg =  8, .rcache_seg_size =  128, .max_multiple = 16 },
+    { .name = "[ATA-4] Quantum Fireball EL5.1AT",                 .internal_name = "EL51A011",     .model = "QUANTUM FIREBALL EL5.1A",                                     .zones =  2, .avg_spt = 200, .heads =  4, .rpm = 5400, .full_stroke_ms = 18, .track_seek_ms = 2,   .rcache_num_seg =  8, .rcache_seg_size =  128, .max_multiple = 16 },
+    { .name = "[ATA-4] Quantum Fireball EL7.6AT",                 .internal_name = "EL76A011",     .model = "QUANTUM FIREBALL EL7.6A",                                     .zones =  3, .avg_spt = 200, .heads =  6, .rpm = 5400, .full_stroke_ms = 18, .track_seek_ms = 2,   .rcache_num_seg =  8, .rcache_seg_size =  128, .max_multiple = 16 },
+    { .name = "[ATA-4] Quantum Fireball EL10.2AT",                .internal_name = "EL10A012",     .model = "QUANTUM FIREBALL EL10.2A",                                    .zones =  4, .avg_spt = 200, .heads =  8, .rpm = 5400, .full_stroke_ms = 18, .track_seek_ms = 2,   .rcache_num_seg =  8, .rcache_seg_size =  128, .max_multiple = 16 },
     { .name = "[ATA-4] Quantum Fireball EX12.7A",                 .internal_name = "EX12A012",     .model = "QUANTUM FIREBALL EX12.7A",             .version = "A0A.0D00", .zones =  4, .avg_spt = 200, .heads =  8, .rpm = 5400, .full_stroke_ms = 20, .track_seek_ms = 2,   .rcache_num_seg =  8, .rcache_seg_size =  128, .max_multiple = 16 },
     { .name = "[ATA-4] Quantum Fireball LCT-08 (LA04A011)",       .internal_name = "LA04A011",     .model = "QUANTUM FIREBALLlct08 04",             .version = "A05.0X00", .zones =  8, .avg_spt = 280, .heads =  6, .rpm = 5400, .full_stroke_ms = 40, .track_seek_ms = 3,   .rcache_num_seg =  8, .rcache_seg_size =  512, .max_multiple = 16 },
     { .name = "[ATA-4] Seagate Medalist 2122",                    .internal_name = "ST32122A",     .model = "ST32122A",                                                    .zones = 16, .avg_spt = 215, .heads =  2, .rpm = 4500, .full_stroke_ms = 23, .track_seek_ms = 3.8, .rcache_num_seg = 16, .rcache_seg_size =  128, .max_multiple = 16 },
@@ -564,10 +570,11 @@ static hdd_preset_t hdd_speed_presets[] = {
     { .name = "[ATA-5] Samsung SpinPoint V6800 (SV2046D)",        .internal_name = "SV2046D",      .model = "SAMSUNG SV2046D",                                             .zones =  8, .avg_spt = 295, .heads =  6, .rpm = 5400, .full_stroke_ms = 18, .track_seek_ms = 1.3, .rcache_num_seg = 16, .rcache_seg_size =  512, .max_multiple = 32 },
     { .name = "[ATA-5] Seagate U8 - 4.3gb",                       .internal_name = "ST34313A",     .model = "ST34313A",                                                    .zones = 16, .avg_spt = 289, .heads =  1, .rpm = 5400, .full_stroke_ms = 25, .track_seek_ms = 1.5, .rcache_num_seg = 16, .rcache_seg_size =  512, .max_multiple = 32 },
     { .name = "[ATA-5] Seagate U8 - 8.4gb",                       .internal_name = "ST38410A",     .model = "ST38410A",                                                    .zones = 16, .avg_spt = 289, .heads =  2, .rpm = 5400, .full_stroke_ms = 25, .track_seek_ms = 1.5, .rcache_num_seg = 16, .rcache_seg_size =  512, .max_multiple = 32 },
-    { .name = "[ATA-5] Seagate U8 - 13gb",                        .internal_name = "ST313021A",    .model = "ST313021A",                                                   .zones = 16, .avg_spt = 289, .heads =  4, .rpm = 5400, .full_stroke_ms = 25, .track_seek_ms = 1.5, .rcache_num_seg = 16, .rcache_seg_size =  512, .max_multiple = 32 },
-    { .name = "[ATA-5] Seagate U8 - 17.2gb",                      .internal_name = "ST317221A",    .model = "ST317221A",                                                   .zones = 16, .avg_spt = 289, .heads =  3, .rpm = 5400, .full_stroke_ms = 25, .track_seek_ms = 1.5, .rcache_num_seg = 16, .rcache_seg_size =  512, .max_multiple = 32 },
+    { .name = "[ATA-5] Seagate U8 - 13gb",                        .internal_name = "ST313021A",    .model = "ST313021A",                                                   .zones = 16, .avg_spt = 289, .heads =  3, .rpm = 5400, .full_stroke_ms = 25, .track_seek_ms = 1.5, .rcache_num_seg = 16, .rcache_seg_size =  512, .max_multiple = 32 },
+    { .name = "[ATA-5] Seagate U8 - 17.2gb",                      .internal_name = "ST317221A",    .model = "ST317221A",                                                   .zones = 16, .avg_spt = 289, .heads =  4, .rpm = 5400, .full_stroke_ms = 25, .track_seek_ms = 1.5, .rcache_num_seg = 16, .rcache_seg_size =  512, .max_multiple = 32 },
     { .name = "[ATA-5] Western Digital Caviar 102AA",             .internal_name = "WD102AA",      .model = "WDC WD102AA-00ANA0",                                          .zones = 16, .avg_spt = 295, .heads =  8, .rpm = 5400, .full_stroke_ms = 12, .track_seek_ms = 1.5, .rcache_num_seg = 16, .rcache_seg_size =  512, .max_multiple = 32 },
-    { .name = "[ATA-5] Western Digital Expert",                   .internal_name = "WD135BA",      .model = "WDC WD135BA-60AK",                                            .zones = 16, .avg_spt = 350, .heads =  6, .rpm = 7200, .full_stroke_ms = 15, .track_seek_ms = 2,   .rcache_num_seg = 16, .rcache_seg_size = 1920, .max_multiple = 32 },
+    { .name = "[ATA-5] Western Digital Expert 135BA",             .internal_name = "WD135BA",      .model = "WDC WD135BA-60AK",                                            .zones = 16, .avg_spt = 350, .heads =  4, .rpm = 7200, .full_stroke_ms = 15, .track_seek_ms = 2,   .rcache_num_seg = 16, .rcache_seg_size = 1920, .max_multiple = 32 },
+    { .name = "[ATA-5] Western Digital Expert 200BA",             .internal_name = "WD200BA",      .model = "WDC WD200BA-60AGA0",                                          .zones = 16, .avg_spt = 350, .heads =  6, .rpm = 7200, .full_stroke_ms = 15, .track_seek_ms = 2,   .rcache_num_seg = 16, .rcache_seg_size = 1920, .max_multiple = 32 },
    // clang-format on
 };
 

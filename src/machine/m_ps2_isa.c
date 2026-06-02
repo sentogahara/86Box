@@ -185,7 +185,7 @@ static const device_config_t ps2_m30_286_config[] = {
 
 const device_t ps2_m30_286_device = {
     .name          = "IBM PS/2 model 30-286",
-    .internal_name = "ps2_m30_286_device",
+    .internal_name = "ibmps2_m30_286",
     .flags         = 0,
     .local         = 0,
     .init          = NULL,
@@ -229,8 +229,6 @@ ps2_isa_setup(int model, int cpu_type)
 
     mem_remap_top(384);
 
-    device_add(&ps_nvr_device);
-
     device_add(&fdc_ps2_device);
 
     /* Enable the builtin HDC. */
@@ -264,18 +262,18 @@ machine_ps2_isa_p1_handler(void)
 
     switch (mem_size / 1024) {
         case 0: /*256Kx2*/
-            mem_p1 = 0xf0;
+            mem_p1 = 0xb0;
             break;       
         case 1: /*256Kx4*/
-            mem_p1 = 0xe0;
+            mem_p1 = 0xa0;
             break;
         case 2: /*1Mx2*/
         case 3: 
-            mem_p1 = 0xd0;
+            mem_p1 = 0x90;
             break;
         case 4: /*1Mx4*/
         default:
-            mem_p1 = 0xc0;
+            mem_p1 = 0x80;
             break;
     }
 

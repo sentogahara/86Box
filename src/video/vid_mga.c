@@ -46,7 +46,7 @@
 
 #define FIFO_SIZE        65536
 #define FIFO_MASK        (FIFO_SIZE - 1)
-#define FIFO_ENTRY_SIZE  (1 << 31)
+#define FIFO_ENTRY_SIZE  (UINT32_C(1) << 31)
 #define FIFO_THRESHOLD   0xe000
 
 #define WAKE_DELAY       (100 * TIMER_USEC) /* 100us */
@@ -336,7 +336,7 @@
 #define MACCESS_FOGEN                 (1 << 26)
 #define MACCESS_TLUTLOAD              (1 << 29)
 #define MACCESS_NODITHER              (1 << 30)
-#define MACCESS_DIT555                (1 << 31)
+#define MACCESS_DIT555                (UINT32_C(1) << 31)
 
 #define PITCH_MASK                    0xfe0
 #define PITCH_YLIN                    (1 << 15)
@@ -385,7 +385,7 @@
 #define TEXCTL_CLAMPU                 (1 << 28)
 #define TEXCTL_TMODULATE              (1 << 29)
 #define TEXCTL_STRANS                 (1 << 30)
-#define TEXCTL_ITRANS                 (1 << 31)
+#define TEXCTL_ITRANS                 (UINT32_C(1) << 31)
 
 #define TEXHEIGHT_TH_MASK             (0x3f << 0)
 #define TEXHEIGHT_THMASK_SHIFT        (18)
@@ -918,16 +918,16 @@ mystique_getclock(int clock, void *priv)
     const mystique_t *mystique = (mystique_t *) priv;
 
     if (clock == 0)
-        return 25175000.0;
+        return 25175000.0f;
     if (clock == 1)
-        return 28322000.0;
+        return 28322000.0f;
 
     int m  = mystique->xpixpll[2].m;
     int n  = mystique->xpixpll[2].n;
     int pl = mystique->xpixpll[2].p;
 
-    float fvco = 14318181.0 * (n + 1) / (m + 1);
-    float fo   = fvco / (pl + 1);
+    float fvco = 14318181.0f * ((float) n + 1.0f) / ((float) m + 1.0f);
+    float fo   = fvco / ((float) pl + 1.0);
 
     return fo;
 }
@@ -938,29 +938,32 @@ mystique_recalctimings(svga_t *svga)
     mystique_t *mystique = (mystique_t *) svga->priv;
     int         clk_sel  = (svga->miscout >> 2) & 3;
 
-    svga->clock = (cpuclock * (float) (1ULL << 32)) / svga->getclock(clk_sel & 3, svga->clock_gen);
+    svga->clock = (cpuclock * (double) (1ULL << 32)) / svga->getclock(clk_sel & 3, svga->clock_gen);
 
+    svga->htotal = (int) (uint32_t) svga->crtc[0];
     if (mystique->crtcext_regs[1] & CRTCX_R1_HTOTAL8)
-        svga->htotal |= 0x100;
+        svga->htotal += 0x100;
+    svga->htotal += 5;
 
-    svga->hblankstart    = (((mystique->crtcext_regs[1] & 0x02) >> 2) << 8) + svga->crtc[2];
+    uint32_t hblankstart = (((mystique->crtcext_regs[1] & 0x02) >> 2) << 8) + svga->crtc[2];
+    svga->hblankstart    = (int) hblankstart;
 
     if (mystique->crtcext_regs[2] & CRTCX_R2_VTOTAL10)
-        svga->vtotal |= 0x400;
+        svga->vtotal += 0x400;
     if (mystique->crtcext_regs[2] & CRTCX_R2_VTOTAL11)
-        svga->vtotal |= 0x800;
+        svga->vtotal += 0x800;
     if (mystique->crtcext_regs[2] & CRTCX_R2_VDISPEND10)
-        svga->dispend |= 0x400;
+        svga->dispend += 0x400;
     if (mystique->crtcext_regs[2] & CRTCX_R2_VBLKSTR10)
-        svga->vblankstart |= 0x400;
+        svga->vblankstart += 0x400;
     if (mystique->crtcext_regs[2] & CRTCX_R2_VBLKSTR11)
-        svga->vblankstart |= 0x800;
+        svga->vblankstart += 0x800;
     if (mystique->crtcext_regs[2] & CRTCX_R2_VSYNCSTR10)
-        svga->vsyncstart |= 0x400;
+        svga->vsyncstart += 0x400;
     if (mystique->crtcext_regs[2] & CRTCX_R2_VSYNCSTR11)
-        svga->vsyncstart |= 0x800;
+        svga->vsyncstart += 0x800;
     if (mystique->crtcext_regs[2] & CRTCX_R2_LINECOMP10)
-        svga->split |= 0x400;
+        svga->split += 0x400;
 
     if (mystique->type == MGA_2064W || mystique->type == MGA_2164W) {
         tvp3026_recalctimings(svga->ramdac, svga);
@@ -971,13 +974,13 @@ mystique_recalctimings(svga_t *svga)
     if (mystique->crtcext_regs[3] & CRTCX_R3_MGAMODE) {
         svga->lowres        = 0;
         svga->char_width    = 8;
-        svga->hdisp         = (svga->crtc[1] + 1) << 3;
+        svga->hdisp         = (int) (((uint32_t) (svga->crtc[1] + 1)) << 3);
         svga->hdisp_time    = svga->hdisp;
         svga->rowoffset     = svga->crtc[0x13] | ((mystique->crtcext_regs[0] & CRTCX_R0_OFFSET_MASK) << 4);
 
         svga->dots_per_clock  = 8;
-        svga->hblank_end_val  = (svga->crtc[3] & 0x1f) | (((svga->crtc[5] & 0x80) >> 7) << 5) |
-                                (((mystique->crtcext_regs[1] & 0x40) >> 6) << 6);
+        svga->hblank_end_val  = (int) (((uint32_t) svga->crtc[3] & 0x1f) | ((((uint32_t) svga->crtc[5] & 0x80) >> 7) << 5) |
+                                      ((((uint32_t) mystique->crtcext_regs[1] & 0x40) >> 6) << 6));
         svga->hblank_end_mask = 0x0000007f;
 
         if (mystique->type != MGA_2164W && mystique->type != MGA_2064W)
@@ -3135,7 +3138,7 @@ run_dma(mystique_t *mystique)
 }
 
 static void
-fifo_thread(void *priv)
+mach64_fifo_thread(void *priv)
 {
     mystique_t *mystique = (mystique_t *) priv;
 
@@ -3801,7 +3804,7 @@ blit_iload_iload(mystique_t *mystique, uint32_t data, int size)
 
                 case DWGCTRL_BLTMOD_BMONOWF:
                     data      = (data >> 24) | ((data & 0x00ff0000) >> 8) | ((data & 0x0000ff00) << 8) | (data << 24);
-                    data_mask = (1 << 31);
+                    data_mask = (UINT32_C(1) << 31);
                 case DWGCTRL_BLTMOD_BMONOLEF:
                     while (size) {
                         if (mystique->dwgreg.xdst >= mystique->dwgreg.cxleft && mystique->dwgreg.xdst <= mystique->dwgreg.cxright && mystique->dwgreg.ydst_lin >= mystique->dwgreg.ytop && mystique->dwgreg.ydst_lin <= mystique->dwgreg.ybot && ((data & data_mask) || !(mystique->dwgreg.dwgctrl_running & DWGCTRL_TRANSC)) && trans[mystique->dwgreg.xdst & 3]) {
@@ -6777,10 +6780,8 @@ mystique_conv_16to32(svga_t* svga, uint16_t color, uint8_t bpp)
 static void *
 mystique_init(const device_t *info)
 {
-    mystique_t *mystique = malloc(sizeof(mystique_t));
+    mystique_t *mystique = calloc(1, sizeof(mystique_t));
     const char *romfn = NULL;
-
-    memset(mystique, 0, sizeof(mystique_t));
 
     mystique->type = info->local;
 
@@ -6867,9 +6868,10 @@ mystique_init(const device_t *info)
     mystique->pci_regs[0x2e] = mystique->bios_rom.rom[0x7ffa];
     mystique->pci_regs[0x2f] = mystique->bios_rom.rom[0x7ffb];
 
-    mystique->svga.miscout   = 1;
-    mystique->pci_regs[0x41] = 0x01; /* vgaboot = 1 */
-    mystique->pci_regs[0x43] = 0x40; /* biosen = 1 */
+    mystique->svga.miscout    = 1;
+    mystique->svga.adv_flags |= FLAG_PANNING_ATI;
+    mystique->pci_regs[0x41]  = 0x01; /* vgaboot = 1 */
+    mystique->pci_regs[0x43]  = 0x40; /* biosen = 1 */
 
     for (uint16_t c = 0; c < 256; c++) {
         dither5[c][0][0] = c >> 3;
@@ -6900,7 +6902,7 @@ mystique_init(const device_t *info)
     mystique->wake_fifo_thread    = thread_create_event();
     mystique->fifo_not_full_event = thread_create_event();
     mystique->thread_run          = 1;
-    mystique->fifo_thread         = thread_create(fifo_thread, mystique);
+    mystique->fifo_thread         = thread_create(mach64_fifo_thread, mystique);
     mystique->dma.lock            = thread_create_mutex();
 
     timer_add(&mystique->wake_timer, mystique_wake_timer, (void *) mystique, 0);
