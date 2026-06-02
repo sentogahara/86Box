@@ -1096,10 +1096,10 @@ extern int             machine_at_tc430hx_init(const machine_t *);
 extern const device_t  m7shi_device;
 #endif
 extern int             machine_at_m7shi_init(const machine_t *);
-extern int             machine_at_ms660_init(const machine_t *);
 extern int             machine_at_epc2102_init(const machine_t *);
 extern int             machine_at_pcv90_init(const machine_t *);
 extern int             machine_at_p55t2s_init(const machine_t *);
+extern int             machine_at_trent_init(const machine_t *);
 
 /* i430VX */
 extern int             machine_at_ap5vm_init(const machine_t *);
