@@ -72,6 +72,97 @@ machine_at_ap61_init(const machine_t *model)
     return ret;
 }
 
+static const device_config_t performanceau_config[] = {
+    // clang-format off
+    {
+        .name           = "bios",
+        .description    = "BIOS Version",
+        .type           = CONFIG_BIOS,
+        .default_string = "bravomst6xxx",
+        .default_int    = 0,
+        .file_filter    = NULL,
+        .spinner        = { 0 },
+        .selection      = { { 0 } },
+        .bios           = {
+            {
+                .name          = "Intel AMIBIOS - Revision 1.00.01.CG0Q (AST Bravo MS-T 6xxx)",
+                .internal_name = "bravomst6xxx",
+                .bios_type     = BIOS_NORMAL,
+                .files_no      = 5,
+                .local         = 0,
+                .size          = 262144,
+                .files         = { "roms/machines/performanceau/1001CG0Q.BIO", "roms/machines/performanceau/1001CG0Q.BI1",
+                                   "roms/machines/performanceau/1001CG0Q.BI2", "roms/machines/performanceau/1001CG0Q.BI3",
+                                   "roms/machines/performanceau/1001CG0Q.RCV", "" }
+            },
+            {
+                .name          = "Intel AMIBIOS - Revision 1.00.01.CG0P (Compaq ProLinea 6xxxe)",
+                .internal_name = "prolinea6xxxe",
+                .bios_type     = BIOS_NORMAL,
+                .files_no      = 5,
+                .local         = 0,
+                .size          = 262144,
+                .files         = { "roms/machines/performanceau/1001CG0P.BIO", "roms/machines/performanceau/1001CG0P.BI1",
+                                   "roms/machines/performanceau/1001CG0P.BI2", "roms/machines/performanceau/1001CG0P.BI3",
+                                   "roms/machines/performanceau/1001CG0P.RCV", "" }
+            },
+            { .files_no = 0 }
+        }
+    },
+    { .name = "", .description = "", .type = CONFIG_END }
+    // clang-format on
+};
+
+const device_t performanceau_device = {
+    .name          = "Intel Performance/AU",
+    .internal_name = "performanceau",
+    .flags         = 0,
+    .local         = 0,
+    .init          = NULL,
+    .close         = NULL,
+    .reset         = NULL,
+    .available     = NULL,
+    .speed_changed = NULL,
+    .force_redraw  = NULL,
+    .config        = performanceau_config
+};
+
+int
+machine_at_performanceau_init(const machine_t *model)
+{
+    int         ret = 0;
+    const char *fn[5];
+
+    /* No ROMs available */
+    if (!device_available(model->device))
+        return ret;
+
+    device_context(model->device);
+    for (uint8_t i = 0; i < 5; i++)
+        fn[i] = device_get_bios_file(machine_get_device(machine), device_get_config_bios("bios"), i);
+    ret = bios_load_linear_combined2(fn[0], fn[1], fn[2], fn[3], fn[4], 0x3a000, 128);
+    device_context_restore();
+
+    machine_at_common_init(model);
+
+    pci_init(PCI_CONFIG_TYPE_1);
+    pci_register_slot(0x19, PCI_CARD_NORTHBRIDGE,     0, 0, 0, 0);
+    pci_register_slot(0x14, PCI_CARD_NORTHBRIDGE_SEC, 0, 0, 0, 0);
+    pci_register_slot(0x02, PCI_CARD_SOUTHBRIDGE,     0, 0, 0, 0);
+    pci_register_slot(0x06, PCI_CARD_NORMAL,          1, 2, 3, 4);
+    pci_register_slot(0x0A, PCI_CARD_NORMAL,          4, 1, 2, 3);
+    pci_register_slot(0x0C, PCI_CARD_NORMAL,          3, 4, 1, 2);
+    pci_register_slot(0x0E, PCI_CARD_NORMAL,          2, 3, 4, 1);
+
+    device_add(&i450kx_device);
+    device_add(&piix_device);
+    device_add_params(&pc87306_device, (void *) PCX730X_AMI);
+
+    device_add(&intel_flash_bxt_ami_device);
+
+    return ret;
+}
+
 /* i450GX */
 int
 machine_at_p6rp4_init(const machine_t *model)
@@ -96,7 +187,7 @@ machine_at_p6rp4_init(const machine_t *model)
     pci_register_slot(0x05, PCI_CARD_NORMAL,          3, 4, 1, 2);
     pci_register_slot(0x04, PCI_CARD_NORMAL,          4, 1, 2, 3);
 
-    device_add(&i450kx_device);
+    device_add(&i450kx_device); /* 450GX is a superset of the 450KX */
     device_add(&sio_zb_device);
     device_add(&ide_cmd646_device);
     /* Input port bit 2 must be 1 or CMOS Setup is disabled. */
