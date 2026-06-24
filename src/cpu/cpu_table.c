@@ -4101,6 +4101,23 @@ const cpu_family_t cpu_families[] = {
                 .cache_write_cycles = 13,
                 .atclk_div          = 36
             },
+            {
+                .name               = "366 (Counterfeit)",
+                .cpu_type           = CPU_PENTIUMMMX,
+                .fpus               = fpus_internal,
+                .rspeed             = 366666666,
+                .multi              = 5.5,
+                .voltage            = 2800,
+                .edx_reset          = 0x582,
+                .cpuid_model        = 0x582,
+                .cyrix_id           = 0,
+                .cpu_flags          = CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC,
+                .mem_read_cycles    = 33,
+                .mem_write_cycles   = 33,
+                .cache_read_cycles  = 17,
+                .cache_write_cycles = 17,
+                .atclk_div          = 44
+            },
             { .name = "", 0 }
         }
     },
