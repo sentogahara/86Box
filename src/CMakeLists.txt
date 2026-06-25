@@ -34,6 +34,7 @@ add_executable(86Box
     dma.c
     ddma.c
     nmi.c
+    pci_dummy.c
     pic.c
     pit.c
     pit_fast.c
@@ -119,6 +120,7 @@ endif()
 
 target_link_libraries(86Box
     cpu
+    char
     chipset
     mch
     dev
@@ -150,6 +152,10 @@ if(STATIC_BUILD)
     if(MINGW OR UNIX)
         target_link_options(86Box PRIVATE "-static")
         set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+    endif()
+
+    if(MINGW AND NOT $ENV{MSYSTEM} MATCHES "MINGW")
+        target_link_libraries(86Box ucrt)
     endif()
 endif()
 
@@ -198,6 +204,7 @@ else()
 endif()
 
 add_subdirectory(cdrom)
+add_subdirectory(char)
 add_subdirectory(chipset)
 
 add_subdirectory(cpu)
@@ -278,6 +285,8 @@ add_subdirectory(video)
 if (APPLE)
     add_subdirectory(mac)
 endif()
+
+add_subdirectory(osd)
 
 if (QT)
     add_subdirectory(qt)

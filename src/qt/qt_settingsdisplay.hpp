@@ -20,8 +20,7 @@ public:
 
     int  changed();
 
-    void restore();
-    void save();
+    void save(int soft);
 
 public slots:
     void onCurrentMachineChanged(int machineId);
@@ -62,6 +61,8 @@ private:
 
     int                  machineId                = 0;
     int                  videoCard[VIDEOCARD_MAX] = { 0, 0 };
+
+    QString previousEDIDPath;
 
     void updateDisplay();
 
