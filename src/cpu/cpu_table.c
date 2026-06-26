@@ -3624,7 +3624,7 @@ const cpu_family_t cpu_families[] = {
         .internal_name = "pentium_p5",
         .cpus          = (const CPU[]) {
             {
-                .name               = "50 (Q0399)",
+                .name               = "50 (Eng. Sample Q0399)",
                 .cpu_type           = CPU_PENTIUM,
                 .fpus               = fpus_internal,
                 .rspeed             = 50000000,
@@ -4101,6 +4101,23 @@ const cpu_family_t cpu_families[] = {
                 .cache_write_cycles = 13,
                 .atclk_div          = 36
             },
+            {
+                .name               = "400 (300 Overclock)",
+                .cpu_type           = CPU_PENTIUMMMX,
+                .fpus               = fpus_internal,
+                .rspeed             = 400000000,
+                .multi              = 4.5,
+                .voltage            = 2800,
+                .edx_reset          = 0x582,
+                .cpuid_model        = 0x582,
+                .cyrix_id           = 0,
+                .cpu_flags          = CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC,
+                .mem_read_cycles    = 36,
+                .mem_write_cycles   = 36,
+                .cache_read_cycles  = 12,
+                .cache_write_cycles = 12,
+                .atclk_div          = 48
+            },
             { .name = "", 0 }
         }
     },
@@ -4281,8 +4298,8 @@ const cpu_family_t cpu_families[] = {
         .name          = "WinChip",
         .internal_name = "winchip",
         .cpus          = (const CPU[]) {
-            {
-                .name               = "75",
+            { /* out of spec */
+                .name               = "75 (Underclocked)",
                 .cpu_type           = CPU_WINCHIP,
                 .fpus               = fpus_internal,
                 .rspeed             = 75000000,
@@ -4298,8 +4315,8 @@ const cpu_family_t cpu_families[] = {
                 .cache_write_cycles = 4,
                 .atclk_div          = 9
             },
-            {
-                .name               = "90",
+            { /* out of spec */
+                .name               = "90 (Underclocked)",
                 .cpu_type           = CPU_WINCHIP,
                 .fpus               = fpus_internal,
                 .rspeed             = 90000000,
@@ -4315,8 +4332,8 @@ const cpu_family_t cpu_families[] = {
                 .cache_write_cycles = 4,
                 .atclk_div          = 21/2
             },
-            {
-                .name               = "100",
+            { /* out of spec */
+                .name               = "100 (Underclocked)",
                 .cpu_type           = CPU_WINCHIP,
                 .fpus               = fpus_internal,
                 .rspeed             = 100000000,
@@ -4332,8 +4349,8 @@ const cpu_family_t cpu_families[] = {
                 .cache_write_cycles = 4,
                 .atclk_div          = 12
             },
-            {
-                .name               = "120",
+            { /* out of spec */
+                .name               = "120 (Underclocked)",
                 .cpu_type           = CPU_WINCHIP,
                 .fpus               = fpus_internal,
                 .rspeed             = 120000000,
@@ -4349,8 +4366,8 @@ const cpu_family_t cpu_families[] = {
                 .cache_write_cycles = 6,
                 .atclk_div          = 14
             },
-            {
-                .name               = "133",
+            { /* out of spec */
+                .name               = "133 (Underclocked)",
                 .cpu_type           = CPU_WINCHIP,
                 .fpus               = fpus_internal,
                 .rspeed             = 133333333,
@@ -4366,8 +4383,8 @@ const cpu_family_t cpu_families[] = {
                 .cache_write_cycles = 6,
                 .atclk_div          = 16
             },
-            {
-                .name               = "150",
+            { /* out of spec */
+                .name               = "150 (Underclocked)",
                 .cpu_type           = CPU_WINCHIP,
                 .fpus               = fpus_internal,
                 .rspeed             = 150000000,
@@ -4383,8 +4400,8 @@ const cpu_family_t cpu_families[] = {
                 .cache_write_cycles = 7,
                 .atclk_div          = 35/2
             },
-            {
-                .name               = "166",
+            { /* out of spec */
+                .name               = "166 (Underclocked)",
                 .cpu_type           = CPU_WINCHIP,
                 .fpus               = fpus_internal,
                 .rspeed             = 166666666,
@@ -6618,7 +6635,7 @@ const cpu_family_t cpu_families[] = {
         .internal_name = "pentiumpro",
         .cpus          = (const CPU[]) {
             { /* out of spec */
-                .name               = "60",
+                .name               = "60 (Underclocked)",
                 .cpu_type           = CPU_PENTIUMPRO,
                 .fpus               = fpus_internal,
                 .rspeed             = 60000000,
@@ -6635,7 +6652,7 @@ const cpu_family_t cpu_families[] = {
                 .atclk_div          = 7
             },
             { /* out of spec */
-                .name               = "66",
+                .name               = "66 (Underclocked)",
                 .cpu_type           = CPU_PENTIUMPRO,
                 .fpus               = fpus_internal,
                 .rspeed             = 66666666,
@@ -6652,7 +6669,7 @@ const cpu_family_t cpu_families[] = {
                 .atclk_div          = 8
             },
             { /* out of spec */
-                .name               = "90",
+                .name               = "90 (Underclocked)",
                 .cpu_type           = CPU_PENTIUMPRO,
                 .fpus               = fpus_internal,
                 .rspeed             = 90000000,
@@ -6669,7 +6686,7 @@ const cpu_family_t cpu_families[] = {
                 .atclk_div          = 11
             },
             { /* out of spec */
-                .name               = "100",
+                .name               = "100 (Underclocked)",
                 .cpu_type           = CPU_PENTIUMPRO,
                 .fpus               = fpus_internal,
                 .rspeed             = 100000000,
@@ -6686,7 +6703,7 @@ const cpu_family_t cpu_families[] = {
                 .atclk_div          = 12
             },
             { /* out of spec */
-                .name               = "120",
+                .name               = "120 (Underclocked)",
                 .cpu_type           = CPU_PENTIUMPRO,
                 .fpus               = fpus_internal,
                 .rspeed             = 120000000,
@@ -6703,7 +6720,7 @@ const cpu_family_t cpu_families[] = {
                 .atclk_div          = 14
             },
             { /* out of spec */
-                .name               = "133",
+                .name               = "133 (Eng. Sample Q0815)",
                 .cpu_type           = CPU_PENTIUMPRO,
                 .fpus               = fpus_internal,
                 .rspeed             = 133333333,
@@ -6718,7 +6735,7 @@ const cpu_family_t cpu_families[] = {
                 .cache_read_cycles  = 5,
                 .cache_write_cycles = 5,
                 .atclk_div          = 16
-            }, /* out of spec */
+            },
             {
                 .name               = "150",
                 .cpu_type           = CPU_PENTIUMPRO,
@@ -6797,7 +6814,7 @@ const cpu_family_t cpu_families[] = {
         .internal_name = "pentium2_od",
         .cpus          = (const CPU[]) {
             { /* out of spec */
-                .name               = "66",
+                .name               = "66 (Underclocked)",
                 .cpu_type           = CPU_PENTIUM2D,
                 .fpus               = fpus_internal,
                 .rspeed             = 66666666,
@@ -6814,7 +6831,7 @@ const cpu_family_t cpu_families[] = {
                 .atclk_div          = 8
             },
             { /* out of spec */
-                .name               = "100",
+                .name               = "100 (Underclocked)",
                 .cpu_type           = CPU_PENTIUM2D,
                 .fpus               = fpus_internal,
                 .rspeed             = 100000000,
@@ -6831,7 +6848,7 @@ const cpu_family_t cpu_families[] = {
                 .atclk_div          = 12
             },
             { /* out of spec */
-                .name               = "133",
+                .name               = "133 (Underclocked)",
                 .cpu_type           = CPU_PENTIUM2D,
                 .fpus               = fpus_internal,
                 .rspeed             = 133333333,
@@ -6848,7 +6865,7 @@ const cpu_family_t cpu_families[] = {
                 .atclk_div          = 16
             },
             { /* out of spec */
-                .name               = "166",
+                .name               = "166 (Underclocked)",
                 .cpu_type           = CPU_PENTIUM2D,
                 .fpus               = fpus_internal,
                 .rspeed             = 166666666,
@@ -6865,7 +6882,7 @@ const cpu_family_t cpu_families[] = {
                 .atclk_div          = 20
             },
             { /* out of spec */
-                .name               = "200",
+                .name               = "200 (Underclocked)",
                 .cpu_type           = CPU_PENTIUM2D,
                 .fpus               = fpus_internal,
                 .rspeed             = 200000000,
@@ -6882,7 +6899,7 @@ const cpu_family_t cpu_families[] = {
                 .atclk_div          = 24
             },
             { /* out of spec */
-                .name               = "233",
+                .name               = "233 (Underclocked)",
                 .cpu_type           = CPU_PENTIUM2D,
                 .fpus               = fpus_internal,
                 .rspeed             = 233333333,
@@ -6899,7 +6916,7 @@ const cpu_family_t cpu_families[] = {
                 .atclk_div          = 28
             },
             { /* out of spec */
-                .name               = "266",
+                .name               = "266 (Underclocked)",
                 .cpu_type           = CPU_PENTIUM2D,
                 .fpus               = fpus_internal,
                 .rspeed             = 266666666,
@@ -6959,7 +6976,7 @@ const cpu_family_t cpu_families[] = {
         .internal_name = "pentium2_klamath",
         .cpus          = (const CPU[]) {
             { /* out of spec */
-                .name               = "66",
+                .name               = "66 (Underclocked)",
                 .cpu_type           = CPU_PENTIUM2,
                 .fpus               = fpus_internal,
                 .rspeed             = 66666666,
@@ -6976,7 +6993,7 @@ const cpu_family_t cpu_families[] = {
                 .atclk_div          = 8
             },
             { /* out of spec */
-                .name               = "100",
+                .name               = "100 (Underclocked)",
                 .cpu_type           = CPU_PENTIUM2,
                 .fpus               = fpus_internal,
                 .rspeed             = 100000000,
@@ -6993,7 +7010,7 @@ const cpu_family_t cpu_families[] = {
                 .atclk_div          = 12
             },
             { /* out of spec */
-                .name               = "133",
+                .name               = "133 (Underclocked)",
                 .cpu_type           = CPU_PENTIUM2,
                 .fpus               = fpus_internal,
                 .rspeed             = 133333333,
@@ -7010,7 +7027,7 @@ const cpu_family_t cpu_families[] = {
                 .atclk_div          = 16
             },
             { /* out of spec */
-                .name               = "166",
+                .name               = "166 (Underclocked)",
                 .cpu_type           = CPU_PENTIUM2,
                 .fpus               = fpus_internal,
                 .rspeed             = 166666666,
@@ -7027,7 +7044,7 @@ const cpu_family_t cpu_families[] = {
                 .atclk_div          = 20
             },
             { /* out of spec */
-                .name               = "200",
+                .name               = "200 (Underclocked)",
                 .cpu_type           = CPU_PENTIUM2,
                 .fpus               = fpus_internal,
                 .rspeed             = 200000000,
@@ -7103,7 +7120,7 @@ const cpu_family_t cpu_families[] = {
         .internal_name = "pentium2_deschutes",
         .cpus          = (const CPU[]) {
             { /* out of spec */
-                .name               = "66",
+                .name               = "66 (Underclocked)",
                 .cpu_type           = CPU_PENTIUM2D,
                 .fpus               = fpus_internal,
                 .rspeed             = 66666666,
@@ -7120,7 +7137,7 @@ const cpu_family_t cpu_families[] = {
                 .atclk_div          = 8
             },
             { /* out of spec */
-                .name               = "100",
+                .name               = "100 (Underclocked)",
                 .cpu_type           = CPU_PENTIUM2D,
                 .fpus               = fpus_internal,
                 .rspeed             = 100000000,
@@ -7137,7 +7154,7 @@ const cpu_family_t cpu_families[] = {
                 .atclk_div          = 12
             },
             { /* out of spec */
-                .name               = "133",
+                .name               = "133 (Underclocked)",
                 .cpu_type           = CPU_PENTIUM2D,
                 .fpus               = fpus_internal,
                 .rspeed             = 133333333,
@@ -7154,7 +7171,7 @@ const cpu_family_t cpu_families[] = {
                 .atclk_div          = 16
             },
             { /* out of spec */
-                .name               = "166",
+                .name               = "166 (Underclocked)",
                 .cpu_type           = CPU_PENTIUM2D,
                 .fpus               = fpus_internal,
                 .rspeed             = 166666666,
@@ -7171,7 +7188,7 @@ const cpu_family_t cpu_families[] = {
                 .atclk_div          = 20
             },
             { /* out of spec */
-                .name               = "200",
+                .name               = "200 (Underclocked)",
                 .cpu_type           = CPU_PENTIUM2D,
                 .fpus               = fpus_internal,
                 .rspeed             = 200000000,
@@ -7188,7 +7205,7 @@ const cpu_family_t cpu_families[] = {
                 .atclk_div          = 24
             },
             { /* out of spec */
-                .name               = "233",
+                .name               = "233 (Underclocked)",
                 .cpu_type           = CPU_PENTIUM2D,
                 .fpus               = fpus_internal,
                 .rspeed             = 233333333,
@@ -7316,7 +7333,7 @@ const cpu_family_t cpu_families[] = {
         .internal_name = "celeron_covington",
         .cpus          = (const CPU[]) {
             { /* out of spec */
-                .name               = "66",
+                .name               = "66 (Underclocked)",
                 .cpu_type           = CPU_PENTIUM2D,
                 .fpus               = fpus_internal,
                 .rspeed             = 66666666,
@@ -7333,7 +7350,7 @@ const cpu_family_t cpu_families[] = {
                 .atclk_div          = 8
             },
             { /* out of spec */
-                .name               = "100",
+                .name               = "100 (Underclocked)",
                 .cpu_type           = CPU_PENTIUM2D,
                 .fpus               = fpus_internal,
                 .rspeed             = 100000000,
@@ -7350,7 +7367,7 @@ const cpu_family_t cpu_families[] = {
                 .atclk_div          = 12
             },
             { /* out of spec */
-                .name               = "133",
+                .name               = "133 (Underclocked)",
                 .cpu_type           = CPU_PENTIUM2D,
                 .fpus               = fpus_internal,
                 .rspeed             = 133333333,
@@ -7367,7 +7384,7 @@ const cpu_family_t cpu_families[] = {
                 .atclk_div          = 16
             },
             { /* out of spec */
-                .name               = "166",
+                .name               = "166 (Underclocked)",
                 .cpu_type           = CPU_PENTIUM2D,
                 .fpus               = fpus_internal,
                 .rspeed             = 166666666,
@@ -7384,7 +7401,7 @@ const cpu_family_t cpu_families[] = {
                 .atclk_div          = 20
             },
             { /* out of spec */
-                .name               = "200",
+                .name               = "200 (Underclocked)",
                 .cpu_type           = CPU_PENTIUM2D,
                 .fpus               = fpus_internal,
                 .rspeed             = 200000000,
@@ -7401,7 +7418,7 @@ const cpu_family_t cpu_families[] = {
                 .atclk_div          = 24
             },
             { /* out of spec */
-                .name               = "233",
+                .name               = "233 (Underclocked)",
                 .cpu_type           = CPU_PENTIUM2D,
                 .fpus               = fpus_internal,
                 .rspeed             = 233333333,
@@ -7460,7 +7477,7 @@ const cpu_family_t cpu_families[] = {
         .internal_name = "pentium2_xeon",
         .cpus          = (const CPU[]) {
             { /* out of spec */
-                .name               = "100",
+                .name               = "100 (Underclocked)",
                 .cpu_type           = CPU_PENTIUM2D,
                 .fpus               = fpus_internal,
                 .rspeed             = 100000000,
@@ -7477,7 +7494,7 @@ const cpu_family_t cpu_families[] = {
                 .atclk_div          = 12
             },
             { /* out of spec */
-                .name               = "150",
+                .name               = "150 (Underclocked)",
                 .cpu_type           = CPU_PENTIUM2D,
                 .fpus               = fpus_internal,
                 .rspeed             = 150000000,
@@ -7494,7 +7511,7 @@ const cpu_family_t cpu_families[] = {
                 .atclk_div          = 18
             },
             { /* out of spec */
-                .name               = "200",
+                .name               = "200 (Underclocked)",
                 .cpu_type           = CPU_PENTIUM2D,
                 .fpus               = fpus_internal,
                 .rspeed             = 200000000,
@@ -7511,7 +7528,7 @@ const cpu_family_t cpu_families[] = {
                 .atclk_div          = 24
             },
             { /* out of spec */
-                .name               = "250",
+                .name               = "250 (Underclocked)",
                 .cpu_type           = CPU_PENTIUM2D,
                 .fpus               = fpus_internal,
                 .rspeed             = 250000000,
@@ -7528,7 +7545,7 @@ const cpu_family_t cpu_families[] = {
                 .atclk_div          = 30
             },
             { /* out of spec */
-                .name               = "300",
+                .name               = "300 (Underclocked)",
                 .cpu_type           = CPU_PENTIUM2D,
                 .fpus               = fpus_internal,
                 .rspeed             = 300000000,
@@ -7545,7 +7562,7 @@ const cpu_family_t cpu_families[] = {
                 .atclk_div          = 36
             },
             { /* out of spec */
-                .name               = "350",
+                .name               = "350 (Underclocked)",
                 .cpu_type           = CPU_PENTIUM2D,
                 .fpus               = fpus_internal,
                 .rspeed             = 350000000,
@@ -7605,7 +7622,7 @@ const cpu_family_t cpu_families[] = {
         .internal_name = "celeron_mendocino",
         .cpus          = (const CPU[]) {
             { /* out of spec */
-                .name               = "66",
+                .name               = "66 (Underclocked)",
                 .cpu_type           = CPU_PENTIUM2D,
                 .fpus               = fpus_internal,
                 .rspeed             = 66666666,
@@ -7622,7 +7639,7 @@ const cpu_family_t cpu_families[] = {
                 .atclk_div          = 8
             },
             { /* out of spec */
-                .name               = "100",
+                .name               = "100 (Underclocked)",
                 .cpu_type           = CPU_PENTIUM2D,
                 .fpus               = fpus_internal,
                 .rspeed             = 100000000,
@@ -7639,7 +7656,7 @@ const cpu_family_t cpu_families[] = {
                 .atclk_div          = 12
             },
             { /* out of spec */
-                .name               = "133",
+                .name               = "133 (Underclocked)",
                 .cpu_type           = CPU_PENTIUM2D,
                 .fpus               = fpus_internal,
                 .rspeed             = 133333333,
@@ -7656,7 +7673,7 @@ const cpu_family_t cpu_families[] = {
                 .atclk_div          = 16
             },
             { /* out of spec */
-                .name               = "166",
+                .name               = "166 (Underclocked)",
                 .cpu_type           = CPU_PENTIUM2D,
                 .fpus               = fpus_internal,
                 .rspeed             = 166666666,
@@ -7673,7 +7690,7 @@ const cpu_family_t cpu_families[] = {
                 .atclk_div          = 20
             },
             { /* out of spec */
-                .name               = "200",
+                .name               = "200 (Underclocked)",
                 .cpu_type           = CPU_PENTIUM2D,
                 .fpus               = fpus_internal,
                 .rspeed             = 200000000,
@@ -7690,7 +7707,7 @@ const cpu_family_t cpu_families[] = {
                 .atclk_div          = 24
             },
             { /* out of spec */
-                .name               = "233",
+                .name               = "233 (Underclocked)",
                 .cpu_type           = CPU_PENTIUM2D,
                 .fpus               = fpus_internal,
                 .rspeed             = 233333333,
@@ -7707,7 +7724,7 @@ const cpu_family_t cpu_families[] = {
                 .atclk_div          = 28
             },
             { /* out of spec */
-                .name               = "266",
+                .name               = "266 (Underclocked)",
                 .cpu_type           = CPU_PENTIUM2D,
                 .fpus               = fpus_internal,
                 .rspeed             = 266666666,
@@ -7809,6 +7826,23 @@ const cpu_family_t cpu_families[] = {
                 .atclk_div          = 51
             },
             {
+                .name               = "450 (300A Overclock)",
+                .cpu_type           = CPU_PENTIUM2D,
+                .fpus               = fpus_internal,
+                .rspeed             = 450000000,
+                .multi              = 4.5,
+                .voltage            = 2050,
+                .edx_reset          = 0x665,
+                .cpuid_model        = 0x665,
+                .cyrix_id           = 0,
+                .cpu_flags          = CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC | CPU_FIXED_MULTIPLIER,
+                .mem_read_cycles    = 41,
+                .mem_write_cycles   = 41,
+                .cache_read_cycles  = 14,
+                .cache_write_cycles = 14,
+                .atclk_div          = 54
+            },
+            {
                 .name               = "466",
                 .cpu_type           = CPU_PENTIUM2D,
                 .fpus               = fpus_internal,
@@ -7869,7 +7903,7 @@ const cpu_family_t cpu_families[] = {
         .internal_name = "c3_samuel",
         .cpus          = (const CPU[]) {
             { /* out of multiplier range */
-                .name               = "66",
+                .name               = "66 (Underclocked)",
                 .cpu_type           = CPU_CYRIX3S,
                 .fpus               = fpus_internal,
                 .rspeed             = 66666666,
@@ -7886,7 +7920,7 @@ const cpu_family_t cpu_families[] = {
                 .atclk_div          = 8
             },
             { /* out of multiplier range */
-                .name               = "100",
+                .name               = "100 (Underclocked)",
                 .cpu_type           = CPU_CYRIX3S,
                 .fpus               = fpus_internal,
                 .rspeed             = 100000000,
@@ -7903,7 +7937,7 @@ const cpu_family_t cpu_families[] = {
                 .atclk_div          = 12
             },
             { /* out of multiplier range */
-                .name               = "133",
+                .name               = "133 (Underclocked)",
                 .cpu_type           = CPU_CYRIX3S,
                 .fpus               = fpus_internal,
                 .rspeed             = 133333333,
@@ -7920,7 +7954,7 @@ const cpu_family_t cpu_families[] = {
                 .atclk_div          = 16
             },
             { /* out of multiplier range */
-                .name               = "166",
+                .name               = "166 (Underclocked)",
                 .cpu_type           = CPU_CYRIX3S,
                 .fpus               = fpus_internal,
                 .rspeed             = 166666666,
@@ -7937,7 +7971,7 @@ const cpu_family_t cpu_families[] = {
                 .atclk_div          = 20
             },
             { /* out of multiplier range */
-                .name               = "200",
+                .name               = "200 (Underclocked)",
                 .cpu_type           = CPU_CYRIX3S,
                 .fpus               = fpus_internal,
                 .rspeed             = 200000000,
@@ -7954,7 +7988,7 @@ const cpu_family_t cpu_families[] = {
                 .atclk_div          = 24
             },
             { /* out of multiplier range */
-                .name               = "233",
+                .name               = "233 (Underclocked)",
                 .cpu_type           = CPU_CYRIX3S,
                 .fpus               = fpus_internal,
                 .rspeed             = 233333333,
@@ -7971,7 +8005,7 @@ const cpu_family_t cpu_families[] = {
                 .atclk_div          = 28
             },
             { /* out of multiplier range */
-                .name               = "266",
+                .name               = "266 (Underclocked)",
                 .cpu_type           = CPU_CYRIX3S,
                 .fpus               = fpus_internal,
                 .rspeed             = 266666666,
@@ -7988,7 +8022,7 @@ const cpu_family_t cpu_families[] = {
                 .atclk_div          = 32
             },
             { /* out of spec */
-                .name               = "300",
+                .name               = "300 (Underclocked)",
                 .cpu_type           = CPU_CYRIX3S,
                 .fpus               = fpus_internal,
                 .rspeed             = 300000000,
@@ -8005,7 +8039,7 @@ const cpu_family_t cpu_families[] = {
                 .atclk_div          = 36
             },
             { /* out of spec */
-                .name               = "333",
+                .name               = "333 (Underclocked)",
                 .cpu_type           = CPU_CYRIX3S,
                 .fpus               = fpus_internal,
                 .rspeed             = 333333333,
@@ -8022,7 +8056,7 @@ const cpu_family_t cpu_families[] = {
                 .atclk_div          = 40
             },
             { /* out of spec */
-                .name               = "366",
+                .name               = "366 (Underclocked)",
                 .cpu_type           = CPU_CYRIX3S,
                 .fpus               = fpus_internal,
                 .rspeed             = 366666666,
@@ -8055,23 +8089,6 @@ const cpu_family_t cpu_families[] = {
                 .cache_write_cycles = 17,
                 .atclk_div          = 48
             },
-            { /* out of spec */
-                .name               = "433",
-                .cpu_type           = CPU_CYRIX3S,
-                .fpus               = fpus_internal,
-                .rspeed             = 433333333,
-                .multi              = 6.5,
-                .voltage            = 2050,
-                .edx_reset          = 0x660,
-                .cpuid_model        = 0x660,
-                .cyrix_id           = 0,
-                .cpu_flags          = CPU_SUPPORTS_DYNAREC | CPU_FIXED_MULTIPLIER,
-                .mem_read_cycles    = 39,
-                .mem_write_cycles   = 39,
-                .cache_read_cycles  = 18,
-                .cache_write_cycles = 18,
-                .atclk_div          = 52
-            },
             {
                 .name               = "450",
                 .cpu_type           = CPU_CYRIX3S,
@@ -8089,12 +8106,12 @@ const cpu_family_t cpu_families[] = {
                 .cache_write_cycles = 14,
                 .atclk_div          = 54
             },
-            { /* out of spec */
+            {
                 .name               = "466",
                 .cpu_type           = CPU_CYRIX3S,
                 .fpus               = fpus_internal,
                 .rspeed             = 466666666,
-                .multi              = 6.5,
+                .multi              = 3.5,
                 .voltage            = 2050,
                 .edx_reset          = 0x660,
                 .cpuid_model        = 0x660,
@@ -8123,12 +8140,12 @@ const cpu_family_t cpu_families[] = {
                 .cache_write_cycles = 15,
                 .atclk_div          = 60
             },
-            { /* out of spec */
+            {
                 .name               = "533",
                 .cpu_type           = CPU_CYRIX3S,
                 .fpus               = fpus_internal,
                 .rspeed             = 533333333,
-                .multi              = 8.0,
+                .multi              = 4.0,
                 .voltage            = 2050,
                 .edx_reset          = 0x660,
                 .cpuid_model        = 0x660,
@@ -8258,6 +8275,57 @@ const cpu_family_t cpu_families[] = {
                 .cache_read_cycles  = 18,
                 .cache_write_cycles = 18,
                 .atclk_div          = 88
+            },
+            {
+                .name               = "750",
+                .cpu_type           = CPU_CYRIX3S,
+                .fpus               = fpus_internal,
+                .rspeed             = 750000000,
+                .multi              = 7.5,
+                .voltage            = 2050,
+                .edx_reset          = 0x663,
+                .cpuid_model        = 0x663,
+                .cyrix_id           = 0,
+                .cpu_flags          = CPU_SUPPORTS_DYNAREC | CPU_FIXED_MULTIPLIER,
+                .mem_read_cycles    = 68,
+                .mem_write_cycles   = 68,
+                .cache_read_cycles  = 22,
+                .cache_write_cycles = 22,
+                .atclk_div          = 90
+            },
+            {
+                .name               = "800/100",
+                .cpu_type           = CPU_CYRIX3S,
+                .fpus               = fpus_internal,
+                .rspeed             = 800000000,
+                .multi              = 8.0,
+                .voltage            = 2050,
+                .edx_reset          = 0x663,
+                .cpuid_model        = 0x663,
+                .cyrix_id           = 0,
+                .cpu_flags          = CPU_SUPPORTS_DYNAREC | CPU_FIXED_MULTIPLIER,
+                .mem_read_cycles    = 73,
+                .mem_write_cycles   = 73,
+                .cache_read_cycles  = 23,
+                .cache_write_cycles = 23,
+                .atclk_div          = 96
+            },
+            {
+                .name               = "800/133",
+                .cpu_type           = CPU_CYRIX3S,
+                .fpus               = fpus_internal,
+                .rspeed             = 800000000,
+                .multi              = 6.0,
+                .voltage            = 2050,
+                .edx_reset          = 0x663,
+                .cpuid_model        = 0x663,
+                .cyrix_id           = 0,
+                .cpu_flags          = CPU_SUPPORTS_DYNAREC | CPU_FIXED_MULTIPLIER,
+                .mem_read_cycles    = 73,
+                .mem_write_cycles   = 73,
+                .cache_read_cycles  = 23,
+                .cache_write_cycles = 23,
+                .atclk_div          = 96
             },
             { .name = "", 0 }
         }
