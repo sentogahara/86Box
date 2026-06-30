@@ -106,8 +106,11 @@ enum {
 
     DEVICE_KBC        = 0x800000,   /* is a keyboard controller */
     DEVICE_SOFTRESET  = 0x1000000,  /* requires to be reset on soft reset */
+    DEVICE_HOTPLUG_IN = 0x2000000,  /* can be safely added without a hard reset */
+    DEVICE_HOTPLUG_OUT= 0x4000000,  /* can be safely closed without a hard reset */
+    DEVICE_HOTPLUG    = DEVICE_HOTPLUG_IN | DEVICE_HOTPLUG_OUT,
 
-    DEVICE_BIOS_ALIAS = 0x2000000,  /* use only BIOS names for aliases */
+    DEVICE_BIOS_ALIAS = 0x8000000,  /* use only BIOS names for aliases */
 
     DEVICE_ONBOARD    = 0x40000000, /* is on-board */
     DEVICE_PIT        = 0x80000000, /* device is a PIT */
@@ -179,6 +182,7 @@ typedef struct _device_ {
     void (*force_redraw)(void *priv);
 
     const char *alias;
+    const char *machine;
     const device_config_t *config;
 } device_t;
 
@@ -208,6 +212,8 @@ extern void *device_add_inst_params(const device_t *dev, int inst, void *params)
 extern void  device_add_inst_ex(const device_t *dev, void *priv, int inst);
 extern void  device_add_inst_ex_params(const device_t *dev, void *priv, int inst, void *params);
 extern void *device_get_common_priv(void);
+extern void  device_close_inst_params(const device_t *device, int inst, void *params);
+extern void  device_close(const device_t *device);
 extern void  device_close_all(void);
 extern void  device_close_by_flags(uint32_t match_flags);
 extern void  device_reset_all(uint32_t match_flags);
@@ -242,11 +248,14 @@ extern void        device_set_config_hex16(const char *str, int val);
 extern void        device_set_config_hex20(const char *str, int val);
 extern void        device_set_config_mac(const char *str, int val);
 extern const char *device_get_config_string(const char *name);
+extern void        device_set_config_string(const char *str, const char *val);
 extern int         device_get_instance(void);
 #define device_get_config_bios device_get_config_string
 
 extern const char *device_get_internal_name(const device_t *dev);
+
 extern const char *device_get_alias(const device_t *dev);
+extern const char *device_get_machine(const device_t *dev);
 
 extern int         machine_get_config_int(char *str);
 extern const char *machine_get_config_string(char *str);

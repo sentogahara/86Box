@@ -284,7 +284,10 @@ tape_load(const tape_t *dev, const char *fn, const int skip_insert)
             ((tape_t *) dev)->eot        = 0;
             ((tape_t *) dev)->num_blocks = 0;
 
-            strncpy(dev->drv->image_path, fn - offs, sizeof(dev->drv->image_path) - 1);
+            if (dev->drv->image_path != (fn - offs)) {
+                const int len = MIN(strlen(fn - offs), (strlen(dev->drv->image_path) - 1));
+                strncpy(dev->drv->image_path, fn - offs, len);
+            }
         }
     }
 
@@ -552,7 +555,7 @@ tape_bus_speed(tape_t *dev)
 {
     double ret = -1.0;
 
-    if (dev && dev->drv)
+    if (dev && dev->drv && (dev->drv->bus_type == TAPE_BUS_ATAPI))
         ret = ide_atapi_get_period(dev->drv->ide_channel);
 
     if (ret == -1.0) {

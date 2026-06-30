@@ -117,9 +117,12 @@ static fdc_cards_t fdc_cards[] = {
 #endif
     { &fdc_monster_device        },
     { &fdc_at_device             },
+    { &fdc_at_ali_device         }, /* No expansion cards use this chip but what if it's used for expansion cards as a standalone? */
     { &fdc_at_nsc_dp8473_device  },
-    { &fdc_at_nsc_device         }, /* TODO: PC87311 SIO & floppy controller */
+    { &fdc_at_nsc_device         },
+    { &fdc_at_nsc_pc87310_device }, /* TODO: PC87311/PC87312 SIO/floppy controller */
     { &fdc_at_smc_device         },
+    { &fdc_at_smc_661_device     }, /* TODO: FDC37C66xGT SIO/floppy controller */
     { &fdc_at_winbond_device     },
     { &fdc_xt_device             },
     { &fdc_xt_umc_um8398_device  },
@@ -2448,7 +2451,11 @@ fdc_set_base(fdc_t *fdc, int base)
     }
 
     if (fdc->flags & FDC_FLAG_NSC) {
-        io_sethandler(base + 2, 0x0004, fdc_read, NULL, NULL, fdc_write, NULL, NULL, fdc);
+        if (fdc->flags & FDC_FLAG_NO_TDR) {
+            io_sethandler(base + 2, 0x0001, fdc_read, NULL, NULL, fdc_write, NULL, NULL, fdc);
+            io_sethandler(base + 4, 0x0002, fdc_read, NULL, NULL, fdc_write, NULL, NULL, fdc);
+        } else
+            io_sethandler(base + 2, 0x0004, fdc_read, NULL, NULL, fdc_write, NULL, NULL, fdc);
         io_sethandler(base + 7, 0x0001, fdc_read, NULL, NULL, fdc_write, NULL, NULL, fdc);
     } else if (fdc->flags & FDC_FLAG_5550) {
         io_sethandler(base, 0x0003, fdc_read, NULL, NULL, fdc_write, NULL, NULL, fdc);
@@ -2486,7 +2493,11 @@ fdc_remove(fdc_t *fdc)
 
     fdc_log("FDC Removed (%04X)\n", fdc->base_address);
     if (fdc->flags & FDC_FLAG_NSC) {
-        io_removehandler(fdc->base_address + 2, 0x0004, fdc_read, NULL, NULL, fdc_write, NULL, NULL, fdc);
+        if (fdc->flags & FDC_FLAG_NO_TDR) {
+            io_removehandler(fdc->base_address + 2, 0x0001, fdc_read, NULL, NULL, fdc_write, NULL, NULL, fdc);
+            io_removehandler(fdc->base_address + 4, 0x0002, fdc_read, NULL, NULL, fdc_write, NULL, NULL, fdc);
+        } else
+            io_removehandler(fdc->base_address + 2, 0x0004, fdc_read, NULL, NULL, fdc_write, NULL, NULL, fdc);
         io_removehandler(fdc->base_address + 7, 0x0001, fdc_read, NULL, NULL, fdc_write, NULL, NULL, fdc);
     } else if (fdc->flags & FDC_FLAG_5550) {
         io_removehandler(fdc->base_address, 0x0003, fdc_read, NULL, NULL, fdc_write, NULL, NULL, fdc);
@@ -2896,9 +2907,9 @@ const device_t fdc_at_actlow_device = {
 };
 
 const device_t fdc_at_smc_661_device = {
-    .name          = "PC/AT FDC (SM(s)C FDC37C661/2)",
+    .name          = "PC/AT FDC (SM(s)C FDC37C66x)",
     .internal_name = "fdc_at_smc",
-    .flags         = 0,
+    .flags         = DEVICE_ISA,
     .local         = FDC_FLAG_AT | FDC_FLAG_SUPERIO | FDC_FLAG_SMC661,
     .init          = fdc_init,
     .close         = fdc_close,
@@ -2926,7 +2937,7 @@ const device_t fdc_at_smc_device = {
 const device_t fdc_at_ali_device = {
     .name          = "PC/AT FDC (ALi M512x/M1543C)",
     .internal_name = "fdc_at_ali",
-    .flags         = 0,
+    .flags         = DEVICE_ISA,
     .local         = FDC_FLAG_AT | FDC_FLAG_SUPERIO | FDC_FLAG_ALI,
     .init          = fdc_init,
     .close         = fdc_close,
@@ -2956,6 +2967,20 @@ const device_t fdc_at_nsc_device = {
     .internal_name = "fdc_at_nsc",
     .flags         = DEVICE_ISA,
     .local         = FDC_FLAG_AT | FDC_FLAG_MORE_TRACKS | FDC_FLAG_NSC,
+    .init          = fdc_init,
+    .close         = fdc_close,
+    .reset         = fdc_reset,
+    .available     = NULL,
+    .speed_changed = NULL,
+    .force_redraw  = NULL,
+    .config        = NULL
+};
+
+const device_t fdc_at_nsc_pc87310_device = {
+    .name          = "PC/AT FDC (NSC PC8731x)",
+    .internal_name = "fdc_at_nsc",
+    .flags         = DEVICE_ISA,
+    .local         = FDC_FLAG_AT | FDC_FLAG_MORE_TRACKS | FDC_FLAG_NSC | FDC_FLAG_NO_TDR,
     .init          = fdc_init,
     .close         = fdc_close,
     .reset         = fdc_reset,

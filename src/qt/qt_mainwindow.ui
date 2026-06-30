@@ -75,10 +75,10 @@
     <addaction name="separator"/>
     <addaction name="actionUpdate_mouse_every_CPU_frame"/>
     <addaction name="separator"/>
-    <addaction name="actionAuto_pause"/>
     <addaction name="actionPause"/>
     <addaction name="separator"/>
     <addaction name="actionFullscreen"/>
+    <addaction name="actionToggle_OSD"/>
     <addaction name="separator"/>
     <addaction name="actionFast_forward"/>
     <addaction name="actionForce_interpretation"/>
@@ -206,6 +206,7 @@
     <addaction name="separator"/>
     <addaction name="menuFullscreen_stretch_mode"/>
     <addaction name="actionApply_fullscreen_stretch_mode_when_maximized"/>
+    <addaction name="actionCGA_composite_settings"/>
     <addaction name="separator"/>
     <addaction name="menuWindow_scale_factor"/>
     <addaction name="actionHiDPI_scaling"/>
@@ -301,14 +302,6 @@
     <string>&amp;Update mouse every CPU frame</string>
    </property>
   </action>
-  <action name="actionAuto_pause">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>&amp;Auto-pause on focus loss</string>
-   </property>
-  </action>
   <action name="actionKeyboard_requires_capture">
    <property name="checkable">
     <bool>true</bool>
@@ -396,6 +389,11 @@
   <action name="actionFullscreen">
    <property name="text">
     <string>&amp;Fullscreen</string>
+   </property>
+  </action>
+  <action name="actionToggle_OSD">
+   <property name="text">
+    <string>Toggle &amp;on-screen display</string>
    </property>
   </action>
   <action name="actionSoftware_Renderer">
@@ -830,6 +828,11 @@
    </property>
    <property name="text">
     <string>&amp;Pen</string>
+   </property>
+  </action>
+  <action name="actionCGA_composite_settings">
+   <property name="text">
+    <string>&amp;CGA composite settings…</string>
    </property>
   </action>
   <action name="action_Full_screen_stretch_gl">

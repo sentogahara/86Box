@@ -174,7 +174,7 @@ static uint8_t pipc_read(int func, int addr, int len, void *priv);
 static void    pipc_write(int func, int addr, int len, uint8_t val, void *priv);
 
 static void
-pipc_io_trap_pact(UNUSED(int size), UNUSED(uint16_t addr), UNUSED(uint8_t write), UNUSED(uint8_t val), void *priv)
+pipc_io_trap_pact(UNUSED(const uint16_t size), UNUSED(const uint16_t port), UNUSED(const uint8_t write), UNUSED(const uint8_t val), void *priv)
 {
     pipc_io_trap_t *trap = (pipc_io_trap_t *) priv;
 
@@ -187,7 +187,7 @@ pipc_io_trap_pact(UNUSED(int size), UNUSED(uint16_t addr), UNUSED(uint8_t write)
 }
 
 static void
-pipc_io_trap_glb(UNUSED(int size), UNUSED(uint16_t addr), uint8_t write, UNUSED(uint8_t val), void *priv)
+pipc_io_trap_glb(UNUSED(const uint16_t size), UNUSED(const uint16_t port), const uint8_t write, UNUSED(const uint8_t val), void *priv)
 {
     pipc_io_trap_t *trap = (pipc_io_trap_t *) priv;
 
@@ -916,7 +916,7 @@ pipc_sb_handlers(pipc_t *dev, uint8_t modem)
 }
 
 static void
-pipc_sb_get_buffer(int32_t *buffer, int len, void *priv)
+pipc_sb_get_buffer(int32_t *buffer, uint16_t len, void *priv)
 {
     pipc_t *dev = (pipc_t *) priv;
 
@@ -1802,7 +1802,7 @@ pipc_init(const device_t *info)
 
     kbc_params |= KBC_VEN_VIA;
 
-    if (machine_get_kbc_device(machine) == NULL)
+    if ((machine_get_kbc_device(machine) == NULL) && !(info->local & VIA_PIPC_NO_KBC))
         device_add_params(&kbc_at_device, (void *) (uintptr_t) kbc_params);
 
     return dev;
