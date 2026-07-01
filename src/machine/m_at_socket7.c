@@ -2456,6 +2456,38 @@ machine_at_ms5172_init(const machine_t *model)
 }
 
 /* ALi ALADDiN IV+ */
+int
+machine_at_ab6189_init(const machine_t *model)
+{
+    int ret;
+
+    ret = bios_load_linear("roms/machines/ab6189/AB 6189-1CPU233 (0.51 640x480).BIN",
+                           0x000c0000, 262144, 0);
+
+    if (bios_only || !ret)
+        return ret;
+
+    machine_at_common_init(model);
+
+    pci_init(PCI_CONFIG_TYPE_1);
+    pci_register_slot(0x00, PCI_CARD_NORTHBRIDGE,     0, 0, 0, 0);
+    pci_register_slot(0x02, PCI_CARD_SOUTHBRIDGE,     1, 2, 3, 4);
+    pci_register_slot(0x0B, PCI_CARD_SOUTHBRIDGE_IDE, 1, 2, 3, 4);
+    pci_register_slot(0x0C, PCI_CARD_SOUTHBRIDGE_PMU, 1, 2, 3, 4);
+    pci_register_slot(0x0F, PCI_CARD_SOUTHBRIDGE_USB, 1, 2, 3, 4);
+    pci_register_slot(0x03, PCI_CARD_NORMAL,          1, 2, 3, 4);
+    pci_register_slot(0x04, PCI_CARD_NORMAL,          2, 3, 4, 1);
+    pci_register_slot(0x05, PCI_CARD_NORMAL,          3, 4, 1, 2);
+    pci_register_slot(0x06, PCI_CARD_NORMAL,          4, 1, 2, 3);
+
+    device_add(&ali1531_device);
+    device_add(&ali1543_device); /* -5 */
+    device_add(&intel_flash_bxt_device);
+    spd_register(SPD_TYPE_SDRAM, 0x3, 256);
+
+    return ret;
+}
+
 static const device_config_t m5ata_config[] = {
     // clang-format off
     {

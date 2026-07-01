@@ -1188,6 +1188,7 @@ extern int             machine_at_sq578_init(const machine_t *);
 extern int             machine_at_ms5172_init(const machine_t *);
 
 /* ALi ALADDiN IV+ */
+extern int             machine_at_ab6189_init(const machine_t *);
 #ifdef EMU_DEVICE_H
 extern const device_t  m5ata_device;
 #endif
