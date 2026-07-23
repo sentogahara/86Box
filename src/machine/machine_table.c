@@ -16962,6 +16962,56 @@ const machine_t machines[] = {
         .aliases                  = { "Premio 219E", "Premio 219F", "" }
     },
 
+    /* UMC 889x */
+    /* This seems to have the UMC 88xx on-chip KBC. */
+    {
+        .name              = "[UMC 889x] Pine Technology PT-733A",
+        .internal_name     = "pt733a",
+        .type              = MACHINE_TYPE_SOCKET7_3V,
+        .chipset           = MACHINE_CHIPSET_UMC_UM8890BF,
+        .init              = machine_at_pt733a_init,
+        .p1_handler        = machine_generic_p1_handler,
+        .gpio_handler      = NULL,
+        .available_flag    = MACHINE_AVAILABLE,
+        .gpio_acpi_handler = NULL,
+        .cpu               = {
+            .package     = CPU_PKG_SOCKET5_7,
+            .block       = CPU_BLOCK_NONE,
+            .min_bus     = 40000000, /* unusual speed, but the manual does list it */
+            .max_bus     = 66666667,
+            .min_voltage = 3520,
+            .max_voltage = 3520,
+            .min_multi   = 1.5,
+            .max_multi   = 3.0
+        },
+        .bus_flags = MACHINE_PCI,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM,
+        .ram       = {
+            .min  = 2048,
+            .max  = 262144,
+            .step = 1024
+        },
+        .nvrmask                  = 127,
+        .jumpered_ecp_dma         = 0,
+        .default_jumpered_ecp_dma = -1,
+        .kbc_device               = NULL,
+        .kbc_params               = 0x00004800,
+        .nvr_device               = &nvr_at_device,
+        .nvr_params               = NVR_AT,
+        .sio_device               = NULL,
+        .sio_params               = 0x00000000,
+        .kbc_p1                   = 0x00000cf0,
+        .gpio                     = 0xffffffff,
+        .gpio_acpi                = 0xffffffff,
+        .device                   = NULL,
+        .kbd_device               = NULL,
+        .fdc_device               = NULL,
+        .vid_device               = NULL,
+        .snd_device               = NULL,
+        .net_device               = NULL,
+        .aliases                  = { "" }
+    },
+
     /* VLSI Wildcat */
     /* KBC firmware is unknown. No PS/2 port is present and no commands outside */
     /* of the base AT KBC command set are used. */

@@ -1098,6 +1098,9 @@ extern const device_t  ms5124_device;
 #endif
 extern int             machine_at_ms5124_init(const machine_t *);
 
+/* UMC 889x */
+extern int             machine_at_pt733a_init(const machine_t *);
+
 /* VLSI Wildcat */
 extern int             machine_at_zeoswildcat_init(const machine_t *);
 

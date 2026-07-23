@@ -1836,6 +1836,36 @@ machine_at_ms5124_init(const machine_t *model)
     return ret;
 }
 
+/* UMC 889x */
+int
+machine_at_pt733a_init(const machine_t *model)
+{
+    int ret;
+
+    ret = bios_load_linear("roms/machines/pt733a/pt-733a.BIN",
+                           0x000e0000, 131072, 0);
+
+    if (bios_only || !ret)
+        return ret;
+
+    machine_at_common_init(model);
+
+    pci_init(PCI_CONFIG_TYPE_1);
+    pci_register_slot(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0);
+    pci_register_slot(0x12, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0);
+    pci_register_slot(0x18, PCI_CARD_NORMAL,      1, 2, 3, 4);
+    pci_register_slot(0x19, PCI_CARD_NORMAL,      2, 3, 4, 1);
+    pci_register_slot(0x1A, PCI_CARD_NORMAL,      3, 4, 1, 2);
+    pci_register_slot(0x1B, PCI_CARD_NORMAL,      4, 1, 2, 3);
+
+    device_add(&umc_8890_device);
+    device_add(&umc_8886bf_device);
+    device_add(&sst_flash_29ee010_device); /* assumed */
+    device_add_params(&um866x_device, (void *) UM8663BF);
+
+    return ret;
+}
+
 /* VLSI Wildcat */
 int
 machine_at_zeoswildcat_init(const machine_t *model)
