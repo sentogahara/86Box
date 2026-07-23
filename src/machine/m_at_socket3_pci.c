@@ -899,6 +899,36 @@ machine_at_pci400cb_init(const machine_t *model)
     return ret;
 }
 
+int
+machine_at_greenvip_init(const machine_t *model)
+{
+    int ret;
+
+    ret = bios_load_linear("roms/machines/greenvip/U-BOARD GREEN VIP - 2A4Z0U01.BIN",
+                           0x000e0000, 131072, 0);
+
+    if (bios_only || !ret)
+        return ret;
+
+    machine_at_common_init(model);
+
+    pci_init(PCI_CONFIG_TYPE_1);
+    pci_register_slot(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0);
+    pci_register_slot(0x0C, PCI_CARD_NORMAL,      4, 3, 2, 1); /* 0F = Slot 1 */
+    pci_register_slot(0x0F, PCI_CARD_NORMAL,      3, 4, 1, 2); /* 0E = Slot 2 */
+    pci_register_slot(0x0E, PCI_CARD_NORMAL,      2, 3, 4, 1); /* 0D = Slot 3 */
+    pci_register_slot(0x0D, PCI_CARD_NORMAL,      1, 2, 3, 4); /* 0C = Slot 4 */
+
+    device_add_params(machine_get_kbc_device(machine), (void *) model->kbc_params);
+
+    device_add(&ims8848_device);
+
+    if (fdc_current[0] == FDC_INTERNAL)
+        device_add(&fdc_at_device);
+
+    return ret;
+}
+
 /* SiS 496 */
 static void
 machine_at_sis_85c496_common_init(UNUSED(const machine_t *model))
