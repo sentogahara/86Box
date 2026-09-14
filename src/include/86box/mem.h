@@ -260,10 +260,9 @@ extern uint8_t *rom;
 extern uint32_t biosmask;
 extern uint32_t biosaddr;
 
-extern int        readlookup[256];
+extern int        readlookup[512];
 extern uintptr_t  old_rl2;
-extern uint8_t    uncached;
-extern int        readlnext;
+extern int        readlnext[2];
 extern int        writelookup[256];
 
 extern int        writelnext;
@@ -274,7 +273,6 @@ extern mem_mapping_t ram_low_mapping;
 extern mem_mapping_t ram_mid_mapping;
 extern mem_mapping_t ram_remapped_mapping;
 extern mem_mapping_t ram_high_mapping;
-extern mem_mapping_t ram_2gb_mapping;
 extern mem_mapping_t bios_mapping;
 extern mem_mapping_t bios_high_mapping;
 
@@ -284,7 +282,7 @@ extern page_t  *pages;
 
 /* The lookup tables. */
 extern page_t *page_lookup[1048576];
-extern uintptr_t readlookup2[1048576];
+extern uintptr_t readlookup2[2097152];
 extern uintptr_t writelookup2[1048576];
 
 extern uint32_t get_phys_virt;
@@ -308,6 +306,8 @@ extern int mem_a20_state;
 extern int mem_a20_alt;
 extern int mem_a20_chipset;
 extern int mem_a20_key;
+
+extern int is_compare;
 
 extern uint8_t  read_mem_b(uint32_t addr);
 extern uint16_t read_mem_w(uint32_t addr);
@@ -424,13 +424,6 @@ extern void     mem_write_ram(uint32_t addr, uint8_t val, void *priv);
 extern void     mem_write_ramw(uint32_t addr, uint16_t val, void *priv);
 extern void     mem_write_raml(uint32_t addr, uint32_t val, void *priv);
 
-extern uint8_t  mem_read_ram_2gb(uint32_t addr, void *priv);
-extern uint16_t mem_read_ram_2gbw(uint32_t addr, void *priv);
-extern uint32_t mem_read_ram_2gbl(uint32_t addr, void *priv);
-extern void     mem_write_ram_2gb(uint32_t addr, uint8_t val, void *priv);
-extern void     mem_write_ram_2gbw(uint32_t addr, uint16_t val, void *priv);
-extern void     mem_write_ram_2gbl(uint32_t addr, uint32_t val, void *priv);
-
 extern int mem_addr_is_ram(uint32_t addr);
 
 extern uint64_t mmutranslate_noabrt(uint32_t addr, int rw);
@@ -453,6 +446,7 @@ extern void mem_debug_check_addr(uint32_t addr, int write);
 
 extern void mem_a20_init(void);
 extern void mem_a20_recalc(void);
+extern void mem_a20_reset_vector_bypass_once(void);
 
 extern void mem_init(void);
 extern void mem_close(void);

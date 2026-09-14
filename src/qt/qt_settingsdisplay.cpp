@@ -40,6 +40,7 @@ extern "C" {
 #include "ui_qt_settingsdisplay.h"
 #include "qt_util.hpp"
 #include "qt_defs.hpp"
+#include "qt_settingsinput.hpp"
 
 SettingsDisplay::SettingsDisplay(QWidget *parent)
     : QWidget(parent)
@@ -62,9 +63,10 @@ SettingsDisplay::SettingsDisplay(QWidget *parent)
 
     ui->lineEditCustomEDID->setFilter(tr("EDID") % util::DlgFilter({ "bin", "dat", "edid", "txt" }) % tr("All files") % util::DlgFilter({ "*" }, true));
     connect(ui->lineEditCustomEDID, &FileField::fileSelected, [this](const QString &fileName) {
-        QFileInfo edidFile(fileName);
-        if (edidFile.isFile() && edidFile.size() > 256) {
-            QMessageBox::critical(this, "EDID", tr("EDID file \"%s\" is too large.").replace("%s", "%1").arg(fileName));
+        uint8_t dummyBuffer[384] = { 0 };
+        size_t size = ddc_load_edid(fileName.toUtf8().data(), dummyBuffer, sizeof(dummyBuffer));
+        if ((size == 0) || (size > 256)) {
+            QMessageBox::critical(this, "EDID", tr((size == 0) ? "EDID file \"%s\" is invalid." : "EDID file \"%s\" is too large.").replace("%s", "%1").arg(fileName));
             this->ui->lineEditCustomEDID->setFileName(this->previousEDIDPath);
         } else
             this->previousEDIDPath = fileName;
@@ -115,6 +117,13 @@ SettingsDisplay::changed()
     has_changed  |= (monitor_edid               != (ui->radioButtonCustom->isChecked() ? 1 : 0));
 
     has_changed  |= strcmp(monitor_edid_path, ui->lineEditCustomEDID->fileName().toUtf8().data());
+
+    for (uint8_t i = 0; i < GFXCARD_MAX; i++)
+        has_changed  |= gfxcard_cfg_changed[i];
+    has_changed  |= voodoo_cfg_changed;
+    has_changed  |= ibm8514_cfg_changed;
+    has_changed  |= xga_cfg_changed;
+    has_changed  |= ps55da2_cfg_changed;
 
     soft_changed |= (video_grayscale                != ui->comboBoxScreenType->currentData().toInt());
     soft_changed |= (video_graytype                 != ui->comboBoxConversionType->currentData().toInt());
@@ -239,9 +248,11 @@ SettingsDisplay::on_pushButtonConfigureVideo_clicked()
 {
     int   videoCard = ui->comboBoxVideo->currentData().toInt();
     auto *device    = video_card_getdevice(videoCard);
-    if (videoCard == VID_INTERNAL)
+    if (videoCard == VID_INTERNAL) {
         device = machine_get_vid_device(machineId);
-    gfxcard_cfg_changed[0] |= DeviceConfig::ConfigureDevice(device);
+        gfxcard_cfg_changed[0] |= DeviceConfig::ConfigureDevice(device);
+    } else
+        gfxcard_cfg_changed[0] |= DeviceConfig::ConfigureDevice(device, 1);
 }
 
 void
@@ -336,8 +347,14 @@ SettingsDisplay::on_comboBoxVideo_currentIndexChanged(int index)
 
         int primaryFlags   = video_card_get_flags(videoCard[0]);
         int secondaryFlags = video_card_get_flags(c);
+
+        const device_t *primary_dev = video_card_getdevice(videoCard[0]);
+        const bool primary_is_agp   = primary_dev && (primary_dev->flags & DEVICE_AGP);
+        const bool secondary_is_agp = video_dev   && (video_dev->flags   & DEVICE_AGP);
+
         if (video_card_available(c)
             && device_is_valid(video_dev, machineId)
+            && !(primary_is_agp && secondary_is_agp)
             && !((secondaryFlags == primaryFlags) && (secondaryFlags != VIDEO_FLAG_TYPE_SECONDARY))
             && !(((primaryFlags == VIDEO_FLAG_TYPE_8514) || (primaryFlags == VIDEO_FLAG_TYPE_XGA)) && (secondaryFlags != VIDEO_FLAG_TYPE_MDA) && (secondaryFlags != VIDEO_FLAG_TYPE_SECONDARY))
             && !((primaryFlags != VIDEO_FLAG_TYPE_MDA) && (primaryFlags != VIDEO_FLAG_TYPE_SECONDARY) && ((secondaryFlags == VIDEO_FLAG_TYPE_8514) || (secondaryFlags == VIDEO_FLAG_TYPE_XGA)))) {
@@ -376,6 +393,19 @@ SettingsDisplay::on_comboBoxVideo_currentIndexChanged(int index)
             ui->checkBoxVoodoo->setChecked(voodoo_enabled);
         }
     }
+
+    if (Settings::settings->input != nullptr)
+        Settings::settings->input->onCurrentMachineChanged(machineId);
+}
+
+bool
+SettingsDisplay::isLightPenUsable()
+{
+    if (ui->comboBoxVideo->currentIndex() < 0)
+        return false;
+
+    return !strcmp(video_get_internal_name(ui->comboBoxVideo->currentData().toInt()), "cga") || !strcmp(video_get_internal_name(ui->comboBoxVideoSecondary->currentData().toInt()), "cga")
+            || !strcmp(video_get_internal_name(ui->comboBoxVideo->currentData().toInt()), "plantronics") || !strcmp(video_get_internal_name(ui->comboBoxVideoSecondary->currentData().toInt()), "plantronics");
 }
 
 void
@@ -417,7 +447,7 @@ void
 SettingsDisplay::on_pushButtonConfigureVideoSecondary_clicked()
 {
     auto *device = video_card_getdevice(ui->comboBoxVideoSecondary->currentData().toInt());
-    gfxcard_cfg_changed[1] |= DeviceConfig::ConfigureDevice(device);
+    gfxcard_cfg_changed[1] |= DeviceConfig::ConfigureDevice(device, 2);
 }
 
 void

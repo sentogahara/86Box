@@ -432,6 +432,7 @@ ymf71x_pnp_config_changed(uint8_t ld, isapnp_device_config_t *config, void *priv
             sb_dsp_setirq(&ymf71x->sb->dsp, 0);
 
             ad1848_setdma(&ymf71x->ad1848, 0);
+            ad1848_setdma2(&ymf71x->ad1848, 0);
             sb_dsp_setdma8(&ymf71x->sb->dsp, 0);
 
             if (config->activate) {
@@ -510,7 +511,11 @@ ymf71x_pnp_config_changed(uint8_t ld, isapnp_device_config_t *config, void *priv
                     if (ymf71x->regs[0x06] & 0x01) {
                         ad1848_setdma(&ymf71x->ad1848, config->dma[0].dma);
                         ymf71x->cur_wss_dma = config->dma[0].dma;
-                        ymf71x_log(ymf71x->log, "Setting WSS DMA to DMA-A (%04X)\n", ymf71x->cur_wss_dma);
+                        ymf71x_log(ymf71x->log, "Setting WSS playback DMA to DMA-A (%04X)\n", ymf71x->cur_wss_dma);
+                    }
+                    if (ymf71x->regs[0x06] & 0x02) {
+                        ad1848_setdma2(&ymf71x->ad1848, config->dma[0].dma);
+                        ymf71x_log(ymf71x->log, "Setting WSS capture DMA to DMA-A (%04X)\n", config->dma[0].dma);
                     }
                     if (ymf71x->regs[0x06] & 0x04) {
                         sb_dsp_setdma8(&ymf71x->sb->dsp, config->dma[0].dma);
@@ -523,7 +528,11 @@ ymf71x_pnp_config_changed(uint8_t ld, isapnp_device_config_t *config, void *priv
                     if (ymf71x->regs[0x06] & 0x10) {
                         ad1848_setdma(&ymf71x->ad1848, config->dma[1].dma);
                         ymf71x->cur_wss_dma = config->dma[1].dma;
-                        ymf71x_log(ymf71x->log, "Setting WSS DMA to DMA-B (%04X)\n", ymf71x->cur_wss_dma);
+                        ymf71x_log(ymf71x->log, "Setting WSS playback DMA to DMA-B (%04X)\n", ymf71x->cur_wss_dma);
+                    }
+                    if (ymf71x->regs[0x06] & 0x20) {
+                        ad1848_setdma2(&ymf71x->ad1848, config->dma[1].dma);
+                        ymf71x_log(ymf71x->log, "Setting WSS capture DMA to DMA-B (%04X)\n", config->dma[1].dma);
                     }
                     if (ymf71x->regs[0x06] & 0x40) {
                         sb_dsp_setdma8(&ymf71x->sb->dsp, config->dma[1].dma);
@@ -671,6 +680,12 @@ ymf71x_get_buffer(int32_t *buffer, uint16_t len, void *priv)
 
         ymf71x->ad1848.pos = 0;
     }
+}
+
+static void
+ymf71x_get_sbpro_buffer(int32_t *buffer, uint16_t len, void *priv)
+{
+    ymf71x_t *ymf71x = (ymf71x_t *) priv;
 
     /* sbprov2 part */
     /* Don't play audio if the SB Compatibility analog or digital sections are powered down */
@@ -744,9 +759,10 @@ ymf71x_init(const device_t *info)
     ymf71x->sb->opl_mixer = ymf71x;
     ymf71x->sb->opl_mix   = ymf71x_filter_opl;
 
-    fm_driver_get(FM_YMF289B, &ymf71x->sb->opl);
+    fm_driver_get_cs(FM_YMF289B, &ymf71x->sb->opl);
 
     sound_add_handler(ymf71x_get_buffer, ymf71x);
+    sound_add_handler(ymf71x_get_sbpro_buffer, ymf71x);
     music_add_handler(sb_get_music_buffer_sbpro, ymf71x->sb);
     ad1848_set_cd_audio_channel(&ymf71x->ad1848, AD1848_AUX1);
     sound_set_cd_audio_filter(NULL, NULL); /* Seems to be necessary for the filter below to apply */
@@ -756,7 +772,7 @@ ymf71x_init(const device_t *info)
     mpu401_init(ymf71x->mpu, ymf71x->cur_mpu401_addr, ymf71x->cur_mpu401_irq, M_UART, device_get_config_int("receive_input401"));
 
     if (device_get_config_int("receive_input"))
-        midi_in_handler(1, sb_dsp_input_msg, sb_dsp_input_sysex, &ymf71x->sb->dsp);
+        midi_in_handler(1, sb_dsp_input_msg, sb_dsp_input_sysex, sb_dsp_input_remain, &ymf71x->sb->dsp);
 
     if (!(info->local & YMF71X_NO_EEPROM)) {
         const char *pnp_rom_file = NULL;

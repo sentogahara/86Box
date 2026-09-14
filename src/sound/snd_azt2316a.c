@@ -195,8 +195,9 @@ aztech_log(void *priv, const char *fmt, ...)
 /*e80, 11, 1 - 530=22*/
 /*f40, 11, 1 - 530=22*/
 
-static int azt2316a_wss_dma[4] = { 0, 0, 1, 3 };
-static int azt2316a_wss_irq[8] = { 5, 7, 9, 10, 11, 12, 14, 15 }; /* W95 only uses 7-10, others may be wrong */
+static int azt2316a_wss_dma[4]  = { 0, 0, 1, 3 };
+static int azt2316a_wss_dma2[4] = { 1, 1, 0, 0 };
+static int azt2316a_wss_irq[8]  = { 5, 7, 9, 10, 11, 12, 14, 15 }; /* W95 only uses 7-10, others may be wrong */
 #if 0
 static uint16_t azt2316a_wss_addr[4] = {0x530, 0x604, 0xe80, 0xf40};
 #endif
@@ -318,6 +319,15 @@ azt2316a_wss_write(UNUSED(uint16_t addr), uint8_t val, void *priv)
     azt2316a->cur_wss_irq = azt2316a_wss_irq[(val >> 3) & 7];
     ad1848_setdma(&azt2316a->ad1848, azt2316a_wss_dma[val & 3]);
     ad1848_setirq(&azt2316a->ad1848, azt2316a_wss_irq[(val >> 3) & 7]);
+
+    /* AZT2316 supports full-duplex mode */
+    if (val & 0x04) {
+        aztech_log(azt2316a->log, "Aztech WSS: Full-duplex mode enabled\n");
+        ad1848_setdma2(&azt2316a->ad1848, azt2316a_wss_dma2[val & 3]);
+    } else {
+        aztech_log(azt2316a->log, "Aztech WSS: Full-duplex mode disabled\n");
+        ad1848_setdma2(&azt2316a->ad1848, 4);
+    }
 
     if (interrupt) {
         if (azt2316a->wss_config & 0x40) {
@@ -1435,6 +1445,12 @@ azt2316a_get_buffer(int32_t *buffer, uint16_t len, void *priv)
         buffer[c] += (azt2316a->ad1848.buffer[c] / 2);
 
     azt2316a->ad1848.pos = 0;
+}
+
+static void
+azt2316a_get_sbpro_buffer(int32_t *buffer, uint16_t len, void *priv)
+{
+    azt2316a_t *azt2316a = (azt2316a_t *) priv;
 
     /* sbprov2 part */
     sb_get_buffer_sbpro(buffer, len, azt2316a->sb);
@@ -1633,8 +1649,8 @@ azt_init(const device_t *info)
             fatal("AZT2316A: invalid mpu401 irq in config word %08X\n", azt2316a->config_word);
 
         /* these are not present on the EEPROM */
-        azt2316a->cur_wss_irq = device_get_config_int("wss_irq");
-        azt2316a->cur_wss_dma = device_get_config_int("wss_dma");
+        azt2316a->cur_wss_irq = 10;
+        azt2316a->cur_wss_dma = 0;
         azt2316a->cur_mode    = 0;
     } else if (azt2316a->type == SB_SUBTYPE_CLONE_AZT1605_0X0C) {
         azt2316a->config_word = read_eeprom[12] + (read_eeprom[13] << 8) + (read_eeprom[14] << 16);
@@ -1710,9 +1726,9 @@ azt_init(const device_t *info)
             azt2316a->cur_wss_enabled = 0;
 
         // these are not present on the EEPROM
-        azt2316a->cur_dma     = device_get_config_int("sb_dma8");
-        azt2316a->cur_wss_irq = device_get_config_int("wss_irq");
-        azt2316a->cur_wss_dma = device_get_config_int("wss_dma");
+        azt2316a->cur_dma     = 1;
+        azt2316a->cur_wss_irq = 10;
+        azt2316a->cur_wss_dma = 0;
         azt2316a->cur_mode    = 0;
     } else if (azt2316a->type == SB_SUBTYPE_CLONE_AZTPR16_0X09) {
         azt2316a->config_word = read_eeprom[32] + (read_eeprom[33] << 8) + (read_eeprom[34] << 16) + (read_eeprom[35] << 24);
@@ -1862,7 +1878,7 @@ azt_init(const device_t *info)
         azt2316a->sb->dsp.azt_eeprom[i] = read_eeprom[i];
 
     if (azt2316a->sb->opl_enabled)
-        fm_driver_get(FM_YMF262, &azt2316a->sb->opl);
+        fm_driver_get_cs(FM_YMF262, &azt2316a->sb->opl);
 
     sb_dsp_set_real_opl(&azt2316a->sb->dsp, 1);
     sb_dsp_init(&azt2316a->sb->dsp, SBPRO_DSP_302, azt2316a->type, azt2316a);
@@ -1881,6 +1897,7 @@ azt_init(const device_t *info)
 
     azt2316a_create_config_word(azt2316a);
     sound_add_handler(azt2316a_get_buffer, azt2316a);
+    sound_add_handler(azt2316a_get_sbpro_buffer, azt2316a);
 
     if ((azt2316a->type == SB_SUBTYPE_CLONE_AZT2316A_0X11) || (azt2316a->type == SB_SUBTYPE_CLONE_AZT2316R_0X12)) {
         if (azt2316a->sb->opl_enabled)
@@ -1907,7 +1924,7 @@ azt_init(const device_t *info)
         azt2316a->mpu = NULL;
 
     if (device_get_config_int("receive_input"))
-        midi_in_handler(1, sb_dsp_input_msg, sb_dsp_input_sysex, &azt2316a->sb->dsp);
+        midi_in_handler(1, sb_dsp_input_msg, sb_dsp_input_sysex, sb_dsp_input_remain, &azt2316a->sb->dsp);
 
     /* Restore SBPro mixer settings from EEPROM on AZT2316A cards */
     if ((azt2316a->type == SB_SUBTYPE_CLONE_AZT2316A_0X11) || (azt2316a->type == SB_SUBTYPE_CLONE_AZT2316R_0X12)) {
@@ -2159,54 +2176,6 @@ static const device_config_t azt1605_config[] = {
         .bios           = { { 0 } }
     },
     {
-        .name           = "sb_dma8",
-        .description    = "SB low DMA",
-        .type           = CONFIG_SELECTION,
-        .default_string = NULL,
-        .default_int    = 1,
-        .file_filter    = NULL,
-        .spinner        = { 0 },
-        .selection      = {
-            { .description = "DMA 0", .value = 0 },
-            { .description = "DMA 1", .value = 1 },
-            { .description = "DMA 3", .value = 3 },
-            { .description = ""                  }
-        },
-        .bios           = { { 0 } }
-    },
-    {
-        .name           = "wss_irq",
-        .description    = "WSS IRQ",
-        .type           = CONFIG_SELECTION,
-        .default_string = NULL,
-        .default_int    = 10,
-        .file_filter    = NULL,
-        .spinner        = { 0 },
-        .selection      = {
-            { .description = "IRQ 11", .value = 11 },
-            { .description = "IRQ 10", .value = 10 },
-            { .description = "IRQ 7",  .value =  7 },
-            { .description = ""                    }
-        },
-        .bios           = { { 0 } }
-    },
-    {
-        .name           = "wss_dma",
-        .description    = "WSS DMA",
-        .type           = CONFIG_SELECTION,
-        .default_string = NULL,
-        .default_int    = 0,
-        .file_filter    = NULL,
-        .spinner        = { 0 },
-        .selection      = {
-            { .description = "DMA 0", .value = 0 },
-            { .description = "DMA 1", .value = 1 },
-            { .description = "DMA 3", .value = 3 },
-            { .description = ""                  }
-        },
-        .bios           = { { 0 } }
-    },
-    {
         .name           = "opl",
         .description    = "Enable OPL",
         .type           = CONFIG_BINARY,
@@ -2277,38 +2246,6 @@ static const device_config_t azt2316a_config[] = {
         .bios           = { { 0 } }
     },
     {
-        .name           = "wss_irq",
-        .description    = "WSS IRQ",
-        .type           = CONFIG_SELECTION,
-        .default_string = NULL,
-        .default_int    = 10,
-        .file_filter    = NULL,
-        .spinner        = { 0 },
-        .selection      = {
-            { .description = "IRQ 11", .value = 11 },
-            { .description = "IRQ 10", .value = 10 },
-            { .description = "IRQ 7",  .value =  7 },
-            { .description = ""                    }
-        },
-        .bios           = { { 0 } }
-    },
-    {
-        .name           = "wss_dma",
-        .description    = "WSS DMA",
-        .type           = CONFIG_SELECTION,
-        .default_string = NULL,
-        .default_int    = 0,
-        .file_filter    = NULL,
-        .spinner        = { 0 },
-        .selection      = {
-            { .description = "DMA 0", .value = 0 },
-            { .description = "DMA 1", .value = 1 },
-            { .description = "DMA 3", .value = 3 },
-            { .description = ""                  }
-        },
-        .bios           = { { 0 } }
-    },
-    {
         .name           = "opl",
         .description    = "Enable OPL",
         .type           = CONFIG_BINARY,
@@ -2360,38 +2297,6 @@ static const device_config_t azt2316r_config[] = {
             { .description = "0x240",              .value = 0x240 },
             { .description = "Use EEPROM setting", .value =     0 },
             { .description = ""                                   }
-        },
-        .bios           = { { 0 } }
-    },
-    {
-        .name           = "wss_irq",
-        .description    = "WSS IRQ",
-        .type           = CONFIG_SELECTION,
-        .default_string = NULL,
-        .default_int    = 10,
-        .file_filter    = NULL,
-        .spinner        = { 0 },
-        .selection      = {
-            { .description = "IRQ 11", .value = 11 },
-            { .description = "IRQ 10", .value = 10 },
-            { .description = "IRQ 7",  .value =  7 },
-            { .description = ""                    }
-        },
-        .bios           = { { 0 } }
-    },
-    {
-        .name           = "wss_dma",
-        .description    = "WSS DMA",
-        .type           = CONFIG_SELECTION,
-        .default_string = NULL,
-        .default_int    = 0,
-        .file_filter    = NULL,
-        .spinner        = { 0 },
-        .selection      = {
-            { .description = "DMA 0", .value = 0 },
-            { .description = "DMA 1", .value = 1 },
-            { .description = "DMA 3", .value = 3 },
-            { .description = ""                  }
         },
         .bios           = { { 0 } }
     },

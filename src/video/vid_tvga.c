@@ -467,7 +467,7 @@ tvga_init(const device_t *info)
     if (tvga->card_id != TVGA9000B_ID)
         tvga->svga.ramdac = device_add(&tkd8001_ramdac_device);
 
-    io_sethandler(0x03c0, 0x0020, tvga_in, NULL, NULL, tvga_out, NULL, NULL, tvga);
+    io_sethandler(0x03a0, 0x0040, tvga_in, NULL, NULL, tvga_out, NULL, NULL, tvga);
 
     return tvga;
 }
@@ -502,7 +502,7 @@ static const device_config_t tvga8900_config[] = {
     // clang-format off
     {
         .name           = "bios",
-        .description    = "BIOS",
+        .description    = "Variant",
         .type           = CONFIG_BIOS,
         .default_string = "tvga8900dr",
         .default_int    = 0,
@@ -590,7 +590,7 @@ static const device_config_t tvga9000b_config[] = {
     // clang-format off
     {
         .name           = "bios",
-        .description    = "BIOS",
+        .description    = "Variant",
         .type           = CONFIG_BIOS,
         .default_string = "tvga9000b",
         .default_int    = 0,

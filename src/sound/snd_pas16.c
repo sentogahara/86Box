@@ -239,6 +239,7 @@ typedef struct pas16_t {
     int      midi_w;
     int      midi_uart_out;
     int      midi_uart_in;
+    int      midi_used;
     int      sysex;
 
     int      irq;
@@ -662,7 +663,8 @@ recalc_pas16_filter(const int playback_freq)
 {
     /* Cutoff frequency = playback / 2 */
     int          n;
-    const double fC = ((double) playback_freq) / (double) FREQ_96000;
+    // const double fC = ((double) playback_freq) / (double) FREQ_96000;
+    const double fC = ((double) playback_freq) / (double) (sound_sample_rate << 1);
     double       gain = 0.0;
 
     for (n = 0; n < SB16_NCoef; n++) {
@@ -822,6 +824,8 @@ pas_in(uint16_t port, void *priv)
                     if (pas16->midi_r != pas16->midi_w) {
                         pas16->midi_r++;
                         pas16->midi_r &= 0xff;
+                        if (pas16->midi_used > 0)
+                            pas16->midi_used--;
                     }
                     if (pas16->midi_r == pas16->midi_w) {
                         pas16->ym3802_reg4_banked[0x03] &= 0x7f;
@@ -954,6 +958,8 @@ pas16_in(uint16_t port, void *priv)
                     if (pas16->midi_r != pas16->midi_w) {
                         pas16->midi_r++;
                         pas16->midi_r &= 0xff;
+                        if (pas16->midi_used > 0)
+                            pas16->midi_used--;
                     }
                 }
                 pas16->midi_stat &= ~0x04;
@@ -2481,6 +2487,7 @@ pas_input_msg(void *priv, uint8_t *msg, uint32_t len)
             pas16_log("Write message %02X to queue\n", msg[i]);
             pas16->midi_queue[pas16->midi_w++] = msg[i];
             pas16->midi_w &= 0xff;
+            pas16->midi_used++;
         }
 
         if (pas16->ym3802_reg6_banked[0x00] & 0x20) /* Check if FIFO-Rx interrupt is enabled */
@@ -2502,6 +2509,7 @@ pas16_input_msg(void *priv, uint8_t *msg, uint32_t len)
         for (uint32_t i = 0; i < len; i++) {
             pas16->midi_queue[pas16->midi_w++] = msg[i];
             pas16->midi_w &= 0xff;
+            pas16->midi_used++;
         }
 
         pas16_update_irq(pas16);
@@ -2523,9 +2531,18 @@ pas16_input_sysex(void *priv, uint8_t *buffer, uint32_t len, int abort)
             return (int) (len - i);
         pas16->midi_queue[pas16->midi_w++] = buffer[i];
         pas16->midi_w &= 0xff;
+        pas16->midi_used++;
     }
     pas16->sysex = 0;
     return 0;
+}
+
+static int
+pas16_input_remain(void *priv)
+{
+    pas16_t  *pas16 = (pas16_t *) priv;
+
+    return (256 - pas16->midi_used);
 }
 
 static void
@@ -2608,11 +2625,10 @@ pasplus_get_buffer(int32_t *buffer, uint16_t len, void *priv)
     const nsc_mixer_t *mixer   = &pas16->nsc_mixer;
     double             bass_treble;
 
-    sb_dsp_update(&pas16->dsp);
     pas16_update(pas16);
     for (uint16_t c = 0; c < len * 2; c += 2) {
-        double out_l = pas16->dsp.buffer[c];
-        double out_r = pas16->dsp.buffer[c + 1];
+        double out_l = 0.0;
+        double out_r = 0.0;
 
         if (pas16->filter) {
             /* We divide by 3 to get the volume down to normal. */
@@ -2657,6 +2673,53 @@ pasplus_get_buffer(int32_t *buffer, uint16_t len, void *priv)
     }
 
     pas16->pos = 0;
+}
+
+void
+pasplus_get_sb_buffer(int32_t *buffer, uint16_t len, void *priv)
+{
+    pas16_t *          pas16   = (pas16_t *) priv;
+    const nsc_mixer_t *mixer   = &pas16->nsc_mixer;
+    double             bass_treble;
+
+    sb_dsp_update(&pas16->dsp);
+    for (uint16_t c = 0; c < len * 2; c += 2) {
+        double out_l = pas16->dsp.buffer[c];
+        double out_r = pas16->dsp.buffer[c + 1];
+
+        out_l *= mixer->master_l;
+        out_r *= mixer->master_r;
+
+        /* This is not exactly how one does bass/treble controls, but the end result is like it.
+           A better implementation would reduce the CPU usage. */
+        if (mixer->bass != 6) {
+            bass_treble = lmc1982_bass_treble_4bits[mixer->bass];
+
+            if (mixer->bass > 6) {
+                out_l += (low_iir(2, 0, out_l) * bass_treble);
+                out_r += (low_iir(2, 1, out_r) * bass_treble);
+            } else if (mixer->bass < 6) {
+                out_l = (out_l *bass_treble + low_cut_iir(2, 0, out_l) * (1.0 - bass_treble));
+                out_r = (out_r *bass_treble + low_cut_iir(2, 1, out_r) * (1.0 - bass_treble));
+            }
+        }
+
+        if (mixer->treble != 6) {
+            bass_treble = lmc1982_bass_treble_4bits[mixer->treble];
+
+            if (mixer->treble > 6) {
+                out_l += (high_iir(2, 0, out_l) * bass_treble);
+                out_r += (high_iir(2, 1, out_r) * bass_treble);
+            } else if (mixer->treble < 6) {
+                out_l = (out_l *bass_treble + high_cut_iir(2, 0, out_l) * (1.0 - bass_treble));
+                out_r = (out_r *bass_treble + high_cut_iir(2, 1, out_r) * (1.0 - bass_treble));
+            }
+        }
+
+        buffer[c] += (int32_t) out_l;
+        buffer[c + 1] += (int32_t) out_r;
+    }
+
     pas16->dsp.pos = 0;
 }
 
@@ -2786,11 +2849,10 @@ pas16_get_buffer(int32_t *buffer, uint16_t len, void *priv)
     const mv508_mixer_t *mixer   = &pas16->mv508_mixer;
     double               bass_treble;
 
-    sb_dsp_update(&pas16->dsp);
     pas16_update(pas16);
     for (uint16_t c = 0; c < len * 2; c += 2) {
-        double out_l = (pas16->dsp.buffer[c] * mixer->sb_l) / 3.0;
-        double out_r = (pas16->dsp.buffer[c + 1] * mixer->sb_r) / 3.0;
+        double out_l = 0.0;
+        double out_r = 0.0;
 
         if (pas16->filter) {
             /* We divide by 3 to get the volume down to normal. */
@@ -2835,6 +2897,53 @@ pas16_get_buffer(int32_t *buffer, uint16_t len, void *priv)
     }
 
     pas16->pos = 0;
+}
+
+void
+pas16_get_sb_buffer(int32_t *buffer, uint16_t len, void *priv)
+{
+    pas16_t *            pas16 =  (pas16_t *) priv;
+    const mv508_mixer_t *mixer   = &pas16->mv508_mixer;
+    double               bass_treble;
+
+    sb_dsp_update(&pas16->dsp);
+    for (uint16_t c = 0; c < len * 2; c += 2) {
+        double out_l = (pas16->dsp.buffer[c] * mixer->sb_l) / 3.0;
+        double out_r = (pas16->dsp.buffer[c + 1] * mixer->sb_r) / 3.0;
+
+        out_l *= mixer->master_l;
+        out_r *= mixer->master_r;
+
+        /* This is not exactly how one does bass/treble controls, but the end result is like it.
+           A better implementation would reduce the CPU usage. */
+        if (mixer->bass != 6) {
+            bass_treble = lmc1982_bass_treble_4bits[mixer->bass];
+
+            if (mixer->bass > 6) {
+                out_l += (low_iir(2, 0, out_l) * bass_treble);
+                out_r += (low_iir(2, 1, out_r) * bass_treble);
+            } else if (mixer->bass < 6) {
+                out_l = (out_l *bass_treble + low_cut_iir(2, 0, out_l) * (1.0 - bass_treble));
+                out_r = (out_r *bass_treble + low_cut_iir(2, 1, out_r) * (1.0 - bass_treble));
+            }
+        }
+
+        if (mixer->treble != 6) {
+            bass_treble = lmc1982_bass_treble_4bits[mixer->treble];
+
+            if (mixer->treble > 6) {
+                out_l += (high_iir(2, 0, out_l) * bass_treble);
+                out_r += (high_iir(2, 1, out_r) * bass_treble);
+            } else if (mixer->treble < 6) {
+                out_l = (out_l *bass_treble + high_cut_iir(2, 0, out_l) * (1.0 - bass_treble));
+                out_r = (out_r *bass_treble + high_cut_iir(2, 1, out_r) * (1.0 - bass_treble));
+            }
+        }
+
+        buffer[c] += (int32_t) out_l;
+        buffer[c + 1] += (int32_t) out_r;
+    }
+
     pas16->dsp.pos = 0;
 }
 
@@ -3067,7 +3176,7 @@ pas_init(UNUSED(const device_t *info))
         sound_set_pc_speaker_filter(pasplus_filter_pc_speaker, pas16);
 
     if (device_get_config_int("receive_input"))
-        midi_in_handler(1, pas_input_msg, pas16_input_sysex, pas16);
+        midi_in_handler(1, pas_input_msg, pas16_input_sysex, pas16_input_remain, pas16);
 
     for (uint8_t i = 0; i < 16; i++) {
         if (i < 6)
@@ -3105,7 +3214,7 @@ pas16_init(const device_t *info)
 
     pas16->type = info->local & 0xff;
     pas16->has_scsi = (!pas16->type) || (pas16->type == 0x0f);
-    fm_driver_get(FM_YMF262, &pas16->opl);
+    fm_driver_get_cs(FM_YMF262, &pas16->opl);
     sb_dsp_set_real_opl(&pas16->dsp, 1);
     sb_dsp_init(&pas16->dsp, SB_DSP_200, SB_SUBTYPE_MVD201, pas16);
     pas16->mpu = (mpu_t *) calloc(1, sizeof(mpu_t));
@@ -3146,12 +3255,14 @@ pas16_init(const device_t *info)
 
     if (pas16->type) {
         sound_add_handler(pas16_get_buffer, pas16);
+        sound_add_handler(pas16_get_sb_buffer, pas16);
         music_add_handler(pas16_get_music_buffer, pas16);
         sound_set_cd_audio_filter(pas16_filter_cd_audio, pas16);
         if (device_get_config_int("control_pc_speaker"))
             sound_set_pc_speaker_filter(pas16_filter_pc_speaker, pas16);
     } else {
         sound_add_handler(pasplus_get_buffer, pas16);
+        sound_add_handler(pasplus_get_sb_buffer, pas16);
         music_add_handler(pasplus_get_music_buffer, pas16);
         sound_set_cd_audio_filter(pasplus_filter_cd_audio, pas16);
         if (device_get_config_int("control_pc_speaker"))
@@ -3159,7 +3270,7 @@ pas16_init(const device_t *info)
     }
 
     if (device_get_config_int("receive_input"))
-        midi_in_handler(1, pas16_input_msg, pas16_input_sysex, pas16);
+        midi_in_handler(1, pas16_input_msg, pas16_input_sysex, pas16_input_remain, pas16);
 
     for (uint8_t i = 0; i < 16; i++) {
         if (i < 6)
@@ -3288,7 +3399,7 @@ static const device_config_t pas16_config[] = {
 };
 
 const device_t pas_device = {
-    .name          = "Pro Audio Spectrum",
+    .name          = "Media Vision Pro Audio Spectrum",
     .internal_name = "pas",
     .flags         = DEVICE_ISA,
     .local         = 0,
@@ -3302,7 +3413,7 @@ const device_t pas_device = {
 };
 
 const device_t pasplus_device = {
-    .name          = "Pro Audio Spectrum Plus",
+    .name          = "Media Vision Pro Audio Spectrum Plus",
     .internal_name = "pasplus",
     .flags         = DEVICE_ISA16,
     .local         = 0,
@@ -3316,7 +3427,7 @@ const device_t pasplus_device = {
 };
 
 const device_t pas16_device = {
-    .name          = "Pro Audio Spectrum 16",
+    .name          = "Media Vision Pro Audio Spectrum 16",
     .internal_name = "pas16",
     .flags         = DEVICE_ISA16,
     .local         = 0x0f,
@@ -3330,7 +3441,7 @@ const device_t pas16_device = {
 };
 
 const device_t pas16d_device = {
-    .name          = "Pro Audio Spectrum 16D",
+    .name          = "Media Vision Pro Audio Spectrum 16D",
     .internal_name = "pas16d",
     .flags         = DEVICE_ISA16,
     .local         = 0x0c,

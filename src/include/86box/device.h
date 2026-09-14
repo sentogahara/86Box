@@ -129,6 +129,8 @@ enum {
 
 #define BIOS_LIMIT_MIN_MEMORY            0x0100000000000000
 #define BIOS_LIMIT_MAX_MEMORY            0x0200000000000000
+#define BIOS_LIMIT_MIN_MEMORY_2          0x0400000000000000
+#define BIOS_LIMIT_MAX_MEMORY_2          0x0800000000000000
 
 typedef struct device_config_selection_t {
     const char *description;
@@ -171,10 +173,7 @@ typedef struct _device_ {
     uint32_t    flags; /* system flags */
     uintptr_t   local; /* flags local to device */
 
-    union {
-        void *(*init)(const struct _device_ *);
-        void *(*init_ext)(const struct _device_ *, void*);
-    };
+    void *(*init)(const struct _device_ *);
     void (*close)(void *priv);
     void (*reset)(void *priv);
     int  (*available)(void);
@@ -212,6 +211,7 @@ extern void *device_add_inst_params(const device_t *dev, int inst, void *params)
 extern void  device_add_inst_ex(const device_t *dev, void *priv, int inst);
 extern void  device_add_inst_ex_params(const device_t *dev, void *priv, int inst, void *params);
 extern void *device_get_common_priv(void);
+extern void  device_close_inst_params(const device_t *device, int inst, void *params);
 extern void  device_close(const device_t *device);
 extern void  device_close_all(void);
 extern void  device_close_by_flags(uint32_t match_flags);
@@ -246,10 +246,11 @@ extern void        device_set_config_int(const char *str, int val);
 extern void        device_set_config_hex16(const char *str, int val);
 extern void        device_set_config_hex20(const char *str, int val);
 extern void        device_set_config_mac(const char *str, int val);
+extern const char *device_get_config_bios(const char *name);
+extern void        device_migrate_config_bios(const void *priv, const char *name);
 extern const char *device_get_config_string(const char *name);
 extern void        device_set_config_string(const char *str, const char *val);
 extern int         device_get_instance(void);
-#define device_get_config_bios device_get_config_string
 
 extern const char *device_get_internal_name(const device_t *dev);
 

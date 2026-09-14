@@ -57,8 +57,9 @@ ymf701_log(void *priv, const char *fmt, ...)
 #    define ymf701_log(fmt, ...)
 #endif
 
-static int ymf701_wss_dma[4] = { 0, 0, 1, 3 };
-static int ymf701_wss_irq[8] = { 0, 7, 9, 10, 11, 0, 0, 0 };
+static int ymf701_wss_dma[4]  = { 0, 0, 1, 3 };
+static int ymf701_wss_dma2[4] = { 1, 1, 0, 0 };
+static int ymf701_wss_irq[8]  = { 0, 7, 9, 10, 11, 0, 0, 0 };
 
 typedef struct ymf701_t {
     uint8_t type;
@@ -140,6 +141,15 @@ ymf701_wss_write(uint16_t addr, uint8_t val, void *priv)
             ad1848_setirq(&ymf701->ad1848, ymf701_wss_irq[(val >> 3) & 7]);
             ymf701_log(ymf701->log, "Set IRQ to %02X\n", ymf701->cur_wss_irq);
             ymf701_log(ymf701->log, "Set DMA to %02X\n", ymf701->cur_wss_dma);
+
+            /* YMF701 supports full-duplex mode */
+            if (val & 0x04) {
+                ymf701_log(ymf701->log, "WSS: Full-duplex mode enabled\n");
+                ad1848_setdma2(&ymf701->ad1848, ymf701_wss_dma2[val & 3]);
+            } else {
+                ymf701_log(ymf701->log, "WSS: Full-duplex mode disabled\n");
+                ad1848_setdma2(&ymf701->ad1848, 4);
+            }
             break;
         default:
             break;
@@ -157,6 +167,12 @@ ymf701_get_buffer(int32_t *buffer, uint16_t len, void *priv)
         buffer[c] += (ymf701->ad1848.buffer[c] / 2);
 
     ymf701->ad1848.pos = 0;
+}
+
+static void
+ymf701_get_sbpro_buffer(int32_t *buffer, uint16_t len, void *priv)
+{
+    ymf701_t *ymf701 = (ymf701_t *) priv;
 
     /* sbprov2 part */
     sb_get_buffer_sbpro(buffer, len, ymf701->sb);
@@ -431,7 +447,7 @@ ymf701_init(const device_t *info)
     ymf701->sb->opl_mixer = ymf701;
     ymf701->sb->opl_mix   = ymf701_filter_opl;
 
-    fm_driver_get(FM_YMF289B, &ymf701->sb->opl);
+    fm_driver_get_cs(FM_YMF289B, &ymf701->sb->opl);
     io_sethandler(ymf701->cur_sb_addr + 0, 0x0004, ymf701->sb->opl.read, NULL, NULL, ymf701->sb->opl.write, NULL, NULL, ymf701->sb->opl.priv);
     io_sethandler(ymf701->cur_sb_addr + 8, 0x0002, ymf701->sb->opl.read, NULL, NULL, ymf701->sb->opl.write, NULL, NULL, ymf701->sb->opl.priv);
     io_sethandler(0x0388, 0x0004, ymf701->sb->opl.read, NULL, NULL, ymf701->sb->opl.write, NULL, NULL, ymf701->sb->opl.priv);
@@ -439,6 +455,7 @@ ymf701_init(const device_t *info)
     io_sethandler(ymf701->cur_sb_addr + 4, 0x0002, sb_ct1345_mixer_read, NULL, NULL, sb_ct1345_mixer_write, NULL, NULL, ymf701->sb);
 
     sound_add_handler(ymf701_get_buffer, ymf701);
+    sound_add_handler(ymf701_get_sbpro_buffer, ymf701);
     music_add_handler(sb_get_music_buffer_sbpro, ymf701->sb);
     ad1848_set_cd_audio_channel(&ymf701->ad1848, AD1848_AUX1);
     sound_set_cd_audio_filter(ad1848_filter_cd_audio, &ymf701->ad1848);
@@ -447,7 +464,7 @@ ymf701_init(const device_t *info)
     mpu401_init(ymf701->mpu, ymf701->cur_mpu401_addr, ymf701->cur_mpu401_irq, M_UART, device_get_config_int("receive_input401"));
 
     if (device_get_config_int("receive_input"))
-        midi_in_handler(1, sb_dsp_input_msg, sb_dsp_input_sysex, &ymf701->sb->dsp);
+        midi_in_handler(1, sb_dsp_input_msg, sb_dsp_input_sysex, sb_dsp_input_remain, &ymf701->sb->dsp);
 
     return ymf701;
 }

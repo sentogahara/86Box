@@ -449,6 +449,14 @@ video_blit_memtoscreen_monitor(int x, int y, int w, int h, int monitor_index)
     MTR_END("video", "video_blit_memtoscreen");
 }
 
+/* Character clocks from the selected HSYNC edge to the next line.
+   Pass zero for sync start, or the effective pulse width for sync end. */
+int
+video_6845_get_hsync_delay(const uint8_t *crtc, int hsync_width)
+{
+    return (crtc[0] + 1) - crtc[2] - hsync_width;
+}
+
 uint8_t
 pixels8(uint32_t *pixels)
 {
@@ -775,7 +783,7 @@ destroy_bitmap(bitmap_t *b)
 bitmap_t *
 create_bitmap(int x, int y)
 {
-    bitmap_t *b = calloc(sizeof(bitmap_t), (y * sizeof(uint32_t *)));
+    bitmap_t *b = calloc(1, sizeof(bitmap_t));
 
     b->dat = calloc((size_t) x * y, 4);
     for (int c = 0; c < y; c++)
@@ -1117,10 +1125,21 @@ video_color_transform(uint32_t color)
 void
 video_clamp_vram(const uint64_t bios_flags, int *vram)
 {
-    const int min_ram = (uint16_t) (bios_flags & 0xffff);
-    const int max_ram = (uint16_t) ((bios_flags >> 16) & 0xffff);
+    const int min_ram = (uint16_t) (bios_flags & 0xff);
+    const int max_ram = (uint16_t) ((bios_flags >> 8) & 0xff);
     if ((bios_flags & BIOS_LIMIT_MIN_MEMORY) && (*vram < min_ram))
         *vram = min_ram;
     if ((bios_flags & BIOS_LIMIT_MAX_MEMORY) && (*vram > max_ram))
+        *vram = max_ram;
+}
+
+void
+video_clamp_vram_2(const uint64_t bios_flags, int *vram)
+{
+    const int min_ram = (uint16_t) ((bios_flags >> 16) & 0xff);
+    const int max_ram = (uint16_t) ((bios_flags >> 24) & 0xff);
+    if ((bios_flags & BIOS_LIMIT_MIN_MEMORY_2) && (*vram < min_ram))
+        *vram = min_ram;
+    if ((bios_flags & BIOS_LIMIT_MAX_MEMORY_2) && (*vram > max_ram))
         *vram = max_ram;
 }

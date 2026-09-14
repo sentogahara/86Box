@@ -630,7 +630,7 @@ cs423x_get_buffer(int32_t *buffer, uint16_t len, void *priv)
 {
     cs423x_t       *dev = (cs423x_t *) priv;
 
-    /* Output audio from the WSS codec, and also the OPL if we're in charge of it. */
+    /* Output audio from the WSS codec. */
     ad1848_update(&dev->ad1848);
 
     /* Don't output anything if the analog section or DAC is powered down. */
@@ -649,7 +649,7 @@ cs423x_get_music_buffer(int32_t *buffer, uint16_t len, void *priv)
 {
     cs423x_t *dev = (cs423x_t *) priv;
 
-    /* Output audio from the WSS codec, and also the OPL if we're in charge of it. */
+    /* Output audio from the OPL if we're in charge of it. */
     if (dev->opl_wss) {
         const int32_t *opl_buf = dev->sb->opl.update(dev->sb->opl.priv);
 
@@ -755,6 +755,7 @@ cs423x_pnp_config_changed(uint8_t ld, isapnp_device_config_t *config, void *priv
             sb_dsp_setirq(&dev->sb->dsp, 0);
 
             ad1848_setdma(&dev->ad1848, 0);
+            ad1848_setdma2(&dev->ad1848, 0);
             sb_dsp_setdma8(&dev->sb->dsp, 0);
 
             if (config->activate) {
@@ -787,6 +788,8 @@ cs423x_pnp_config_changed(uint8_t ld, isapnp_device_config_t *config, void *priv
                     ad1848_setdma(&dev->ad1848, config->dma[0].dma);
                     sb_dsp_setdma8(&dev->sb->dsp, config->dma[0].dma);
                 }
+                if (config->dma[1].dma != ISAPNP_DMA_DISABLED)
+                    ad1848_setdma2(&dev->ad1848, config->dma[1].dma);
             }
             break;
 

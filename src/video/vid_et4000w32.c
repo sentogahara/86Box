@@ -40,6 +40,7 @@
 #define BIOS_ROM_PATH_W32_MACHSPEED_VGA_GUI_2400S   "roms/video/et4000w32/ET4000W32VLB_bios_MX27C512.BIN"
 #define BIOS_ROM_PATH_W32I_REVB_AXIS_MICRODEVICE    "roms/video/et4000w32/ET4KW32I.VBI"
 #define BIOS_ROM_PATH_W32I_REVB_HERCULES_DYNAMITE_VLB_PRO "roms/video/et4000w32/Hercules Dynamite VL Pro v8.00 c 1993 Hercules.bin"
+#define BIOS_ROM_PATH_W32P_REVB_STB                 "roms/video/et4000w32/STB Systems Lightspeed Rev. B (Tseng Labs ET4000-W32p VLB, STG1702J).bin"
 #define BIOS_ROM_PATH_W32P_REVB_VIDEOMAGIC          "roms/video/et4000w32/VideoMagic-BioS-HXIRTW32PWSRL.BIN"
 #define BIOS_ROM_PATH_W32P_REVC_CARDEX              "roms/video/et4000w32/et4000w32pcardex.BIN"
 #define BIOS_ROM_PATH_W32P_REVD                     "roms/video/et4000w32/ET4K_W32.BIN"
@@ -63,6 +64,7 @@ enum {
     MACHSPEED_VGA_GUI_2400S   = 0,
     AXIS_MICRODEVICE_ET4W32_5,
     HERCULES_DYNAMITE_PRO_VLB,
+    STB_LIGHTSPEED,
     VIDEOMAGIC_ETW32PVS,
     CARDEX_REVC,
     GENERIC_REVD,
@@ -2625,7 +2627,7 @@ et4000w32p_hwcursor_draw(svga_t *svga, int displine)
 static void
 et4000w32p_io_remove(et4000w32p_t *et4000)
 {
-    io_removehandler(0x03c0, 0x0020, et4000w32p_in, NULL, NULL, et4000w32p_out, NULL, NULL, et4000);
+    io_removehandler(0x03a0, 0x0040, et4000w32p_in, NULL, NULL, et4000w32p_out, NULL, NULL, et4000);
 
     io_removehandler(0x210a, 0x0002, et4000w32p_in, NULL, NULL, et4000w32p_out, NULL, NULL, et4000);
     io_removehandler(0x211a, 0x0002, et4000w32p_in, NULL, NULL, et4000w32p_out, NULL, NULL, et4000);
@@ -2642,6 +2644,8 @@ et4000w32p_io_set(et4000w32p_t *et4000)
 {
     et4000w32p_io_remove(et4000);
 
+    if (!(et4000->svga.miscout & 0x01))
+        io_sethandler(0x03a0, 0x0020, et4000w32p_in, NULL, NULL, et4000w32p_out, NULL, NULL, et4000);
     io_sethandler(0x03c0, 0x0020, et4000w32p_in, NULL, NULL, et4000w32p_out, NULL, NULL, et4000);
 
     io_sethandler(0x210a, 0x0002, et4000w32p_in, NULL, NULL, et4000w32p_out, NULL, NULL, et4000);
@@ -2853,6 +2857,19 @@ et4000w32p_init(const device_t *info)
             et4000->svga.getclock  = ics2494_getclock;
             break;
 
+        case STB_LIGHTSPEED:
+            /* ET4000/W32p rev B */
+            et4000->rev = ET4000W32P_REVB;
+            et4000->ramdac_type = STG170X;
+
+            rom_init(&et4000->bios_rom, BIOS_ROM_PATH_W32P_REVB_STB, 0xc0000, 0x8000, 0x7fff, 0,
+                     MEM_MAPPING_EXTERNAL);
+
+            et4000->svga.ramdac    = device_add(&stg1702_ramdac_device);
+            et4000->svga.clock_gen = et4000->svga.ramdac;
+            et4000->svga.getclock  = stg_getclock;
+            break;
+
         case VIDEOMAGIC_ETW32PVS:
             /* ET4000/W32p rev B */
             et4000->rev = ET4000W32P_REVB;
@@ -2957,7 +2974,7 @@ et4000w32p_init(const device_t *info)
     et4000->pci_regs[0x33] = 0xf0;
 
     et4000->svga.packed_chain4 = 1;
-    et4000->svga.adv_flags |= FLAG_PANNING_ATI;
+    et4000->svga.adv_flags |= (FLAG_PANNING_ATI | FLAG_EXT_AR);
 
     return et4000;
 }
@@ -3031,13 +3048,23 @@ static const device_config_t et4000w32p_vlb_config[] = {
   // clang-format off
     {
         .name           = "bios",
-        .description    = "BIOS",
+        .description    = "Variant",
         .type           = CONFIG_BIOS,
         .default_string = "et4000w32p_nc_vlb",
         .default_int    = 0,
         .file_filter    = NULL,
         .spinner        = { 0 },
         .bios           = {
+            {
+                .name          = "Rev. B (STB Systems Lightspeed)",
+                .internal_name = "et4000w32p_stb_revb_vlb",
+                .bios_type     = BIOS_NORMAL,
+                .files_no      = 1,
+                .local         = ('B' << 24) | STB_LIGHTSPEED,
+                .size          = 32768,
+                .flags         = 0,
+                .files         = { BIOS_ROM_PATH_W32P_REVB_STB, "" }
+            },
             {
                 .name          = "Rev. B (VideoMagic ETW32PVS)",
                 .internal_name = "et4000w32p_videomagic_revb_vlb",
@@ -3114,7 +3141,7 @@ static const device_config_t et4000w32p_pci_config[] = {
   // clang-format off
     {
         .name           = "bios",
-        .description    = "BIOS",
+        .description    = "Variant",
         .type           = CONFIG_BIOS,
         .default_string = "et4000w32p_nc_pci",
         .default_int    = 0,

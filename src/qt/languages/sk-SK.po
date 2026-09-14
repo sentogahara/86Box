@@ -66,11 +66,14 @@ msgstr "&Renderer"
 msgid "&Qt (Software)"
 msgstr "&Qt (Software)"
 
-msgid "Open&GL (3.0 Core)"
-msgstr "Open&GL (3.0 Core)"
+msgid "Open&GL"
+msgstr "Open&GL"
 
-msgid "&VNC"
-msgstr "&VNC"
+msgid "&Vulkan"
+msgstr "&Vulkan"
+
+msgid "V&NC"
+msgstr "V&NC"
 
 msgid "Specify &dimensions…"
 msgstr "&Zadať veľkosť…"
@@ -420,8 +423,11 @@ msgstr "Zapnutá (UTC)"
 msgid "Use the 486 interpreter for 286 and 386 processors"
 msgstr "Použi interpret 486 pre procesory 286 a 386"
 
-msgid "Dynamic Recompiler"
+msgid "Dynamic recompiler"
 msgstr "Dynamický prekladač"
+
+msgid "Accurate FPU environment on the dynamic recompiler"
+msgstr ""
 
 msgid "CPU frame size"
 msgstr "Veľkosť rámcov CPU"
@@ -453,6 +459,12 @@ msgstr "Grafika XGA"
 msgid "IBM PS/55 Display Adapter Graphics"
 msgstr "Grafika zobrazovacieho adaptéru IBM PS/55"
 
+msgid "SCSI:"
+msgstr "SCSI:"
+
+msgid "Voodoo:"
+msgstr "Voodoo:"
+
 msgid "Keyboard:"
 msgstr "Klávesnica:"
 
@@ -464,6 +476,21 @@ msgstr "Myš:"
 
 msgid "Mouse"
 msgstr "Myš"
+
+msgid "&Mouse"
+msgstr "&Myš"
+
+msgid "Tablet:"
+msgstr ""
+
+msgid "Tablet"
+msgstr ""
+
+msgid "&Tablet"
+msgstr ""
+
+msgid "Tablet (&Crosshair)"
+msgstr ""
 
 msgid "Joystick:"
 msgstr "Joystick:"
@@ -690,6 +717,9 @@ msgstr "Kontrola BPB"
 msgid "CD-ROM drives"
 msgstr "Mechaniky CD-ROM"
 
+msgid "CD-ROM:"
+msgstr "CD-ROM:"
+
 msgid "MO drives"
 msgstr "Magnetooptické mechaniky"
 
@@ -822,6 +852,9 @@ msgstr "Obraz"
 msgid "Input devices"
 msgstr "Vstupné zariadenie"
 
+msgid "Input &device"
+msgstr ""
+
 msgid "Sound"
 msgstr "Zvuk"
 
@@ -830,6 +863,9 @@ msgstr "Sieť"
 
 msgid "Ports (COM & LPT)"
 msgstr "COM a LPT porty"
+
+msgid "Port"
+msgstr ""
 
 msgid "Ports"
 msgstr "Porty"
@@ -840,11 +876,35 @@ msgstr "Sériové porty"
 msgid "Serial ports:"
 msgstr "Sériové porty:"
 
+msgid "COM1:"
+msgstr "COM1:"
+
+msgid "COM2:"
+msgstr "COM2:"
+
+msgid "COM3:"
+msgstr "COM3:"
+
+msgid "COM4:"
+msgstr "COM4:"
+
 msgid "Parallel ports"
 msgstr "Paralelné porty"
 
 msgid "Parallel ports:"
 msgstr "Paralelné porty:"
+
+msgid "LPT1:"
+msgstr "LPT1:"
+
+msgid "LPT2:"
+msgstr "LPT2:"
+
+msgid "LPT3:"
+msgstr "LPT3:"
+
+msgid "LPT4:"
+msgstr "LPT4:"
 
 msgid "Storage controllers"
 msgstr "Radiče úložiska"
@@ -1212,6 +1272,9 @@ msgstr "Nie je možné otvoriť vybraný konfiguračný súbor na čítanie: %1"
 msgid "Use regular expressions in search box"
 msgstr "Použiť v poli vyhľadávania regulárne výrazy"
 
+msgid "Delete virtual machines to Recycle Bin"
+msgstr ""
+
 msgid "%n machine(s) are currently active. Are you sure you want to exit the VM manager anyway?"
 msgid_plural "%n machines are currently active. Are you sure you want to exit the VM manager anyway?"
 msgstr[0] "%n počítač je stále aktívny. Naozaj chcete ukončiť správcu virtuálnych počítačov?"
@@ -1386,8 +1449,11 @@ msgstr "Ukončenie virtuálneho počítača môže spôsobiť stratu údajov. Uk
 msgid "&Delete"
 msgstr "&Odstrániť"
 
-msgid "Do you really want to delete the virtual machine \"%1\" and all its files? This action cannot be undone!"
-msgstr "Naozaj chcete odstrániť virtuálny počítač \"%1\" a všetky jeho súbory? Táto akcia sa nedá vrátiť späť!"
+msgid "Do you really want to delete the virtual machine \"%1\" and all its files?"
+msgstr "Naozaj chcete odstrániť virtuálny počítač \"%1\" a všetky jeho súbory?"
+
+msgid "This action cannot be undone!"
+msgstr "Táto akcia sa nedá vrátiť späť!"
 
 msgid "Show &config file"
 msgstr "Zobraziť &konfiguračný súbor"
@@ -1427,6 +1493,18 @@ msgstr "Vypnúť cez rozhranie ACPI"
 
 msgid "ACP&I shutdown"
 msgstr "Vypnúť cez rozhranie ACP&I"
+
+msgid "Power off"
+msgstr ""
+
+msgid "Power &off…"
+msgstr ""
+
+msgid "Power &off"
+msgstr ""
+
+msgid "Powering off the emulated machine may cause data loss. Are you sure you want to continue?"
+msgstr ""
 
 msgid "Hard disk (%1)"
 msgstr "Pevný disk (%1)"
@@ -1692,8 +1770,11 @@ msgstr "Pomalý"
 msgid "Fast"
 msgstr "Rýchly"
 
-msgid "&Auto-pause on focus loss"
-msgstr "&Automatická pauza pri strate fokusu okna"
+msgid "Auto-pause on focus loss"
+msgstr "Automatická pauza pri strate fokusu okna"
+
+msgid "Auto-pause on dialog boxes"
+msgstr ""
 
 msgid "WinBox is no longer supported"
 msgstr "WinBox už nie je podporovaný"
@@ -2205,6 +2286,9 @@ msgstr "Sériové číslo"
 msgid "Host ID"
 msgstr "ID hostiteľa"
 
+msgid "Host"
+msgstr ""
+
 msgid "FDC Address"
 msgstr "Adresa FDC"
 
@@ -2285,6 +2369,9 @@ msgstr "Vysoký DMA"
 
 msgid "Control PC speaker"
 msgstr "Ovládací reproduktor PC"
+
+msgid "Control MIDI volume"
+msgstr ""
 
 msgid "Memory size"
 msgstr "Veľkosť pamäte"
@@ -2631,6 +2718,18 @@ msgstr "Rozšírený farebný - normálny režim (5154/ECD)"
 msgid "Enhanced Color - Enhanced Mode (5154/ECD)"
 msgstr "Rozšírený farebný - rozšírený režim (5154/ECD)"
 
+msgid "IBM 8507 (1024x768, Monochrome)"
+msgstr "IBM 8507 (1024x768, jednofarebný)"
+
+msgid "IBM 8514 (1024x768, Color)"
+msgstr "IBM 8514 (1024x768, farebný)"
+
+msgid "IBM 8503 (640x480, Monochrome)"
+msgstr "IBM 8503 (640x480, jednofarebný)"
+
+msgid "IBM 8512/13 (640x480, Color)"
+msgstr "IBM 8512/13 (640x480, farebný)"
+
 msgid "Green"
 msgstr "Zelený"
 
@@ -2883,6 +2982,9 @@ msgstr "Vyžadovať potvrdenie pred resetovaním"
 msgid "Ask for confirmation before quitting"
 msgstr "Vyžadovať potvrdenie pred ukončením"
 
+msgid "Precache CHD files into memory"
+msgstr ""
+
 msgid "Options"
 msgstr "Možnosti"
 
@@ -2894,6 +2996,24 @@ msgstr "Model:"
 
 msgid "Failed to initialize Vulkan renderer."
 msgstr "Inicializácia renderera Vulkan zlyhala."
+
+msgid "Failed to create Vulkan 1.3 instance."
+msgstr ""
+
+msgid "No usable Vulkan physical devices found."
+msgstr ""
+
+msgid "No Vulkan-capable physical devices found."
+msgstr ""
+
+msgid "librashader not found. Shaders will not be available."
+msgstr ""
+
+msgid "Vulkan device lost."
+msgstr ""
+
+msgid "Vulkan surface lost."
+msgstr ""
 
 msgid "GLSL Error"
 msgstr "Chyba GLSL"
@@ -2915,6 +3035,9 @@ msgstr "Správca shaderov"
 
 msgid "Shader Configuration"
 msgstr "Konfigurácia shaderu"
+
+msgid "GPU:"
+msgstr ""
 
 msgid "Add"
 msgstr "Pridať"
@@ -2981,6 +3104,12 @@ msgstr "Pozastaviť alebo obnoviť"
 
 msgid "Toggle mute"
 msgstr "Prepnúť stlmenie"
+
+msgid "Toggle on-screen display"
+msgstr ""
+
+msgid "Toggle &on-screen display"
+msgstr ""
 
 msgid "Text files"
 msgstr "Textové súbory"
@@ -3144,6 +3273,9 @@ msgstr "Exportovať…"
 msgid "Export EDID"
 msgstr "Exportovať EDID"
 
+msgid "EDID file \"%s\" is invalid."
+msgstr ""
+
 msgid "EDID file \"%s\" is too large."
 msgstr "Súbor EDID \"%s\" je príliš veľký."
 
@@ -3180,6 +3312,12 @@ msgstr "&Rýchly posun dopredu"
 msgid "Fast forward"
 msgstr "Rýchly posun dopredu"
 
+msgid "&Non-maskable interrupt"
+msgstr ""
+
+msgid "Non-maskable interrupt"
+msgstr ""
+
 msgid "To change the system directory, stop all running machines."
 msgstr "Ak chcete zmeniť systémový adresár, zastavte všetky bežiace stroje."
 
@@ -3211,6 +3349,9 @@ msgid "Unable to load image \"%s\": %1 is missing, which is required for Daemon 
 msgstr ""
 "Nepodarilo sa načítať obraz „%s“: nenašla sa knižnica %1, ktorá je "
 "potrebná na podporu obrazov vo Daemon Tools formátoch MDS v2 a MDX."
+
+msgid "Unable to load image \"%s\": %1 is missing, which is required for Aaru format image support."
+msgstr ""
 
 msgid "The DVD image \"%s\" has been inserted into a drive that does not support DVD media and will be ignored."
 msgstr ""
@@ -3354,3 +3495,12 @@ msgstr "932 (japončina)"
 
 msgid "938 (Traditional Chinese)"
 msgstr "938 (klasická čínština)"
+
+msgid "Sample rate:"
+msgstr ""
+
+msgid "CGA lightpen"
+msgstr ""
+
+msgid "Luminance threshold (%)"
+msgstr ""
