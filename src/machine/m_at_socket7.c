@@ -2701,7 +2701,7 @@ machine_at_p5stbr_init(const machine_t *model)
     pci_register_slot(0x0C, PCI_CARD_NORMAL,      4, 1, 2, 3);
 
     device_add(&sis_5581_device);
-    device_add_params(&w83977_device, (void *) (W83977TF | W83977_AMI | W83977_NO_NVR));
+    device_add_params(&w83977_device, (void *) (W83977TF | W83977_NO_NVR));
     device_add(&sst_flash_29ee010_device);
 
     return ret;
