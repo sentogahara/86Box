@@ -152,6 +152,7 @@ enum {
     S3_ORCHID_86C805,
     S3_DIAMOND_STEALTH64_864,
     S3_LEADTEK_VISION864,
+    S3_VISION864_ONBOARD,
     S3_SPEA_86C964,
     S3_GENOA_VISION868,
     S3_MIROVIDEO_VISION868,
@@ -10786,6 +10787,14 @@ s3_init(const device_t *info)
             chip    = S3_VISION864;
             video_inform(VIDEO_FLAG_TYPE_SPECIAL, &timing_s3_vision864_pci);
             break;
+        case S3_VISION864_ONBOARD:
+            bios_fn = NULL;
+            chip    = S3_VISION864;
+            if (info->flags & DEVICE_PCI)
+                video_inform(VIDEO_FLAG_TYPE_SPECIAL, &timing_s3_vision864_pci);
+            else
+                video_inform(VIDEO_FLAG_TYPE_SPECIAL, &timing_s3_vision864_vlb);
+            break;
         case S3_NUMBER9_9FX_531:
             bios_fn = ROM_NUMBER9_9FX_531;
             chip    = S3_VISION868;
@@ -11412,6 +11421,7 @@ s3_init(const device_t *info)
         case S3_LEADTEK_VISION864:
         case S3_DEC_VISION864:
         case S3_MIROCRYSTAL20SD_864: /*BIOS 3.xx has a SDAC ramdac.*/
+        case S3_VISION864_ONBOARD:
             svga->decode_mask = (8 << 20) - 1;
             if (s3->card_type == S3_PARADISE_BAHAMAS64)
                 stepping = 0xc0; /*Vision864*/
@@ -11727,6 +11737,25 @@ s3_force_redraw(void *priv)
 }
 
 // clang-format off
+static const device_config_t s3_vision864_onboard_config[] = {
+    {
+        .name           = "memory",
+        .description    = "Memory size",
+        .type           = CONFIG_SELECTION,
+        .default_string = NULL,
+        .default_int    = 4,
+        .file_filter    = NULL,
+        .spinner        = { 0 },
+        .selection      = {
+            { .description = "1 MB",   .value = 1 },
+            { .description = "2 MB",   .value = 2 },
+            { .description = ""                   }
+        },
+        .bios           = { { 0 } }
+    },
+    { .name = "", .description = "", .type = CONFIG_END }
+};
+
 static const device_config_t s3_trio_onboard_config[] = {
     {
         .name           = "memory",
@@ -11790,6 +11819,34 @@ const device_t s3_86c805_onboard_vlb_device = {
     .speed_changed = s3_speed_changed,
     .force_redraw  = s3_force_redraw,
     .config        = NULL
+};
+
+const device_t s3_vision864_onboard_vlb_device = {
+    .name          = "S3 Vision864 On-Board VLB",
+    .internal_name = "vision864_onboard_vlb",
+    .flags         = DEVICE_VLB,
+    .local         = S3_VISION864_ONBOARD,
+    .init          = s3_init,
+    .close         = s3_close,
+    .reset         = s3_reset,
+    .available     = NULL,
+    .speed_changed = s3_speed_changed,
+    .force_redraw  = s3_force_redraw,
+    .config        = s3_vision864_onboard_config
+};
+
+const device_t s3_vision864_onboard_pci_device = {
+    .name          = "S3 Vision864 On-Board PCI",
+    .internal_name = "vision864_onboard_pci",
+    .flags         = DEVICE_PCI,
+    .local         = S3_VISION864_ONBOARD,
+    .init          = s3_init,
+    .close         = s3_close,
+    .reset         = s3_reset,
+    .available     = NULL,
+    .speed_changed = s3_speed_changed,
+    .force_redraw  = s3_force_redraw,
+    .config        = s3_vision864_onboard_config
 };
 
 const device_t s3_trio32_onboard_vlb_device = {
