@@ -1345,6 +1345,7 @@ extern const device_t  ficpo6000_device;
 #endif
 extern int             machine_at_p6rp4_init(const machine_t *);
 extern int             machine_at_ficpo6000_init(const machine_t *);
+extern int             machine_at_d931_init(const machine_t *);
 
 /* i440FX */
 extern int             machine_at_acerv60n_init(const machine_t *);
