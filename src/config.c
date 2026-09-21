@@ -54,6 +54,7 @@
 #include <86box/nvr.h>
 #include <86box/ini.h>
 #include <86box/config.h>
+#include <86box/mcamem.h>
 #include <86box/isamem.h>
 #include <86box/isarom.h>
 #include <86box/isartc.h>
@@ -64,11 +65,11 @@
 #include <86box/hdc.h>
 #include <86box/hdc_ide.h>
 #include <86box/fdd.h>
+#include <86box/fdd_tape.h>
 #include <86box/fdd_audio.h>
 #include <86box/fdc_ext.h>
 #include <86box/gameport.h>
 #include <86box/keyboard.h>
-#include <86box/serial_passthrough.h>
 #include <86box/machine.h>
 #include <86box/mouse.h>
 #include <86box/thread.h>
@@ -94,16 +95,18 @@
 
 #ifndef USE_SDL_UI
 /* Deliberate to not make the 86box.h header kitchen-sink. */
-#include <86box/qt-glsl.h>
+#include <86box/qt_glsl.h>
 extern char gl3_shader_file[MAX_USER_SHADERS][512];
+extern char vk_shader_file[20][512];
 #endif
 
-static int   cx;
-static int   cy;
-static int   cw;
-static int   ch;
-static ini_t config;
-static ini_t global;
+static int      cx;
+static int      cy;
+static int      cw;
+static int      ch;
+static ini_t    config;
+static ini_t    global;
+static mutex_t *config_mutex = NULL;
 
 #ifdef ENABLE_CONFIG_LOG
 int config_do_log = ENABLE_CONFIG_LOG;
@@ -123,11 +126,103 @@ config_log(const char *fmt, ...)
 #    define config_log(fmt, ...)
 #endif
 
+int new_loaded = 0;
+int kb_loaded  = 0;
+
 /* Load global configuration */
 static void
-load_global(void)
+load_global_emulator(void)
+{
+    ini_section_t cat = ini_find_section(global, "Emulator");
+    new_loaded |= (cat != NULL);
+
+    char         *p;
+
+    p = ini_section_get_string(cat, "language", NULL);
+    if (p != NULL)
+        lang_id = plat_language_code(p);
+    else
+        lang_id = plat_language_code(DEFAULT_LANGUAGE);
+
+    open_dir_usr_path = ini_section_get_int(cat, "open_dir_usr_path", 0);
+
+    do_auto_pause        = ini_section_get_int(cat, "do_auto_pause", 0);
+    do_auto_dialog_pause = ini_section_get_int(cat, "do_auto_dialog_pause", 0);
+
+    confirm_reset = ini_section_get_int(cat, "confirm_reset", 1);
+    confirm_exit  = ini_section_get_int(cat, "confirm_exit", 1);
+    confirm_save  = ini_section_get_int(cat, "confirm_save", 1);
+    color_scheme  = ini_section_get_int(cat, "color_scheme", 0);
+
+    vmm_disabled = ini_section_get_int(cat, "vmm_disabled", 0);
+
+    chd_precache_level = ini_section_get_int(cat, "chd_precache_level", 0);
+
+    p = ini_section_get_string(cat, "vmm_path", NULL);
+    if (p != NULL) {
+        /* Convert relative paths to absolute in portable mode */
+        if (portable_mode && !path_abs(p)) {
+            path_append_filename(vmm_path_cfg, exe_path, p);
+            path_normalize(vmm_path_cfg);
+        } else {
+            strncpy(vmm_path_cfg, p, sizeof(vmm_path_cfg) - 1);
+        }
+    } else {
+        plat_get_vmm_dir(vmm_path_cfg, sizeof(vmm_path_cfg));
+    }
+}
+
+static void
+load_global_input(void)
+{
+    ini_section_t cat = ini_find_section(global, "Input");
+    new_loaded |= (cat != NULL);
+
+    inhibit_multimedia_keys = ini_section_get_int(cat, "inhibit_multimedia_keys", 0);
+
+    mouse_sensitivity = ini_section_get_double(cat, "mouse_sensitivity", 1.0);
+    if (mouse_sensitivity < 0.1)
+        mouse_sensitivity = 0.1;
+    else if (mouse_sensitivity > 2.0)
+        mouse_sensitivity = 2.0;
+}
+
+/* Load "Keybinds" section. */
+static void
+load_global_keybinds(void)
+{
+    ini_section_t cat = ini_find_section(global, "Keybinds");
+    kb_loaded |= (cat != NULL);
+    char         *p;
+    char          temp[512];
+    memset(temp, 0, sizeof(temp));
+
+    /* Now load values from config */
+    for (int x = 0; x < NUM_ACCELS; x++) {
+        p = ini_section_get_string(cat, acc_keys[x].name, "default");
+        /* Check if the binding was marked as cleared */
+        if (strcmp(p, "none") == 0)
+            acc_keys[x].seq[0] = '\0';
+        /* If there's no binding in the file, leave it alone. */
+        else if (strcmp(p, "default") != 0) {
+            /*
+               It would be ideal to validate whether the user entered a
+               valid combo at this point, but the Qt method for testing that is
+               not available from C. Fortunately, if you feed Qt an invalid
+               keysequence string it just assigns nothing, so this won't blow up.
+               However, to improve the user experience, we should validate keys
+               and erase any bad combos from config on mainwindow load.
+             */
+            strcpy(acc_keys[x].seq, p);
+        }
+    }
+}
+
+static void
+load_global_legacy(void)
 {
     ini_section_t cat = ini_find_section(global, "");
+
     char         *p;
 
     p = ini_section_get_string(cat, "language", NULL);
@@ -165,6 +260,21 @@ load_global(void)
     } else {
         plat_get_vmm_dir(vmm_path_cfg, sizeof(vmm_path_cfg));
     }
+}
+
+static void
+load_global(void)
+{
+    new_loaded = 0;
+    kb_loaded  = 0;
+
+    load_global_emulator();
+    load_global_input();
+
+    load_global_keybinds();            /* Load shortcut keybinds */
+
+    if (!new_loaded)
+        load_global_legacy();
 }
 
 /* Load scan code mappings. */
@@ -209,6 +319,7 @@ load_general(void)
     video_filter_method = ini_section_get_int(cat, "video_filter_method", 1);
 
     force_43 = !!ini_section_get_int(cat, "force_43", 0);
+    force_device_aspect = !force_43 && !!ini_section_get_int(cat, "force_device_aspect", 0);
     scale    = ini_section_get_int(cat, "scale", 1);
     if (scale > 9)
         scale = 9;
@@ -259,6 +370,7 @@ load_general(void)
 
     enable_discord = !!ini_section_get_int(cat, "enable_discord", 0);
 
+    video_vk_device = ini_section_get_int(cat, "video_vk_device", 0);
     video_framerate = ini_section_get_int(cat, "video_gl_framerate", -1);
     video_vsync     = ini_section_get_int(cat, "video_gl_vsync", 0);
 
@@ -276,7 +388,6 @@ load_general(void)
         ini_section_delete_var(cat, "window_coordinates");
     }
 
-    do_auto_pause = ini_section_get_int(cat, "do_auto_pause", 0);
     force_constant_mouse = ini_section_get_int(cat, "force_constant_mouse", 0);
     fdd_sounds_enabled = ini_section_get_int(cat, "fdd_sounds_enabled", 1);
 
@@ -285,6 +396,8 @@ load_general(void)
         strncpy(uuid, p, sizeof(uuid) - 1);
     else
         strncpy(uuid, "", sizeof(uuid) - 1);
+
+    gdbstub_port = ini_section_get_int(cat, "gdbstub_port", 12345);
 }
 
 /* Load monitor section. */
@@ -317,7 +430,6 @@ static void
 load_machine(void)
 {
     ini_section_t cat = ini_find_section(config, "Machine");
-    ini_section_t migration_cat;
     const char   *p;
     const char   *migrate_from = NULL;
     int           c;
@@ -352,6 +464,7 @@ load_machine(void)
         { .old = "dellvenus", .new = "vs440fx", .new_bios = "dellvenus" },
         { .old = "gw2kvenus", .new = "vs440fx", .new_bios = "gw2kvenus" },
         { .old = "lgibmx7g", .new = "ms6119", .new_bios = "lgibmx7g" },
+        { .old = "apas3", .new = "vim863s", .new_bios = NULL },
         { 0 }
     };
 
@@ -363,10 +476,8 @@ load_machine(void)
                 machine = machine_get_machine_from_internal_name(machine_migrations[i].new);
                 if (machine != -1) {
                     migrate_from = p;
-                    if (machine_migrations[i].new_bios) {
-                        migration_cat = ini_find_or_create_section(config, machine_get_device(machine)->name);
-                        ini_section_set_string(migration_cat, "bios", machine_migrations[i].new_bios);
-                    }
+                    if (machine_migrations[i].new_bios)
+                        ini_set_string(config, machine_get_device(machine)->name, "bios", machine_migrations[i].new_bios);
                 }
                 break;
             }
@@ -425,7 +536,7 @@ load_machine(void)
     p                        = ini_section_get_string(cat, "cpu_family", NULL);
     if (p) {
         /* Migrate CPU family changes. */
-        if (machines[machine].init == machine_at_deskpro386_init)
+        if ((machines[machine].init == machine_at_deskpro386_init) && !strcmp(p, "i386dx"))
             cpu_f = cpu_get_family("i386dx_deskpro386");
         else
             cpu_f = cpu_get_family(p);
@@ -511,6 +622,8 @@ load_machine(void)
         time_sync = TIME_SYNC_ENABLED;
 
     pit_mode = ini_section_get_int(cat, "pit_mode", -1);
+
+    cpu_dyn_accurate_fpu_env = ini_section_get_int(cat, "cpu_dyn_accurate_fpu_env", 0);
 }
 
 /* Load "Video" section. */
@@ -544,7 +657,57 @@ load_video(void)
             strcpy(p, "cl_gd5422_boca_isa");
             free_p = 1;
         }
-        gfxcard[0] = video_get_video_from_internal_name(p);
+        const device_t *gfx_dev = video_get_video_from_old_internal_name(p);
+        if (gfx_dev == NULL) {
+            if (!strcmp(p, "et4000ax_tc6058af")) {
+                gfxcard[0] = video_get_video_from_internal_name("et4000ax");
+                ini_section_t old  = ini_find_section(config, "Tseng Labs ET4000AX (TC6058AF) (ISA)");
+                ini_section_t new  = ini_find_section(config, "Tseng Labs ET4000AX (ISA)");
+                char *        bios = ini_section_get_string(old, "bios_ver", "v1_10");
+                int           mem  = ini_section_get_int(old, "memory", 512);
+                if (new == NULL)
+                    new = ini_find_or_create_section(config, "Tseng Labs ET4000AX (ISA)");
+                ini_section_set_string(new, "bios", bios);
+                ini_section_set_int(new, "memory", mem);
+                if (old != NULL) {
+                    ini_section_delete_var(old, "bios_ver");
+                    ini_section_delete_var(old, "memory");
+                    ini_delete_section_if_empty(config, old);
+                }
+            } else if (!strcmp(p, "tgkorvga") || !strcmp(p, "et4000k_tg286_isa") || !strcmp(p, "kasan16vga")) {
+                gfxcard[0] = video_get_video_from_internal_name("et4000ax");
+                char *        on   = NULL;
+                if (!strcmp(p, "tgkorvga"))
+                    on = "TriGem Korean VGA (Tseng Labs ET4000AX Korean)";
+                else if (!strcmp(p, "et4000k_tg286_isa"))
+                    on = "TriGem Korean VGA (TriGem 286M)";
+                else
+                    on = "Kasan Hangulmadang-16 VGA (Tseng Labs ET4000AX Korean)";
+                ini_section_t old  = ini_find_section(config, on);
+                ini_section_t new  = ini_find_section(config, "Tseng Labs ET4000AX (ISA)");
+                int           mem  = ini_section_get_int(old, "memory", 512);
+                if (new == NULL)
+                    new = ini_find_or_create_section(config, "Tseng Labs ET4000AX (ISA)");
+                ini_section_set_string(new, "bios", p);
+                ini_section_set_int(new, "memory", mem);
+                if (old != NULL) {
+                    ini_section_delete_var(old, "memory");
+                    ini_delete_section_if_empty(config, old);
+                }
+            } else {
+                gfxcard[0] = video_get_video_from_internal_name(p);
+                if (!strcmp(p, "et4000ax")) {
+                    ini_section_t new  = ini_find_section(config, "Tseng Labs ET4000AX (ISA)");
+                    char *        bios = ini_section_get_string(new, "bios_ver", "v8_01");
+                    if (strcmp(bios, "v8_01"))
+                        ini_section_set_string(new, "bios", bios);
+                    ini_section_delete_var(new, "bios_ver");
+                }
+            }
+        } else {
+            device_video_config_migrate(gfx_dev, p, 0);
+            gfxcard[0] = video_get_video_from_internal_name((char *) gfx_dev->internal_name);
+        }
         if (free_p) {
             free(p);
             p = NULL;
@@ -575,7 +738,13 @@ load_video(void)
         p = ini_section_get_string(cat, "gfxcard_2", NULL);
         if (!p)
             p = "none";
-        gfxcard[i] = video_get_video_from_internal_name(p);
+        const device_t *gfx_dev = video_get_video_from_old_internal_name(p);
+        if (gfx_dev == NULL)
+            gfxcard[i] = video_get_video_from_internal_name(p);
+        else {
+            device_video_config_migrate(gfx_dev, p, 0);
+            gfxcard[i] = video_get_video_from_internal_name((char *) gfx_dev->internal_name);
+        }
     }
 
     monitor_edid = ini_section_get_int(cat, "monitor_edid", 0);
@@ -613,10 +782,24 @@ load_input_devices(void)
         keyboard_type = KEYBOARD_TYPE_PC_XT;
 
     p = ini_section_get_string(cat, "mouse_type", NULL);
-    if (p != NULL)
+    if (p != NULL) {
         mouse_type = mouse_get_from_internal_name(p);
-    else
+
+        // Migration.
+        if (tablet_get_from_internal_name(p) && mouse_type == 0)
+            ini_section_set_string(cat, "tablet_type", p);
+    } else
         mouse_type = 0;
+
+    p = ini_section_get_string(cat, "tablet_type", NULL);
+    if (p != NULL)
+        tablet_type = tablet_get_from_internal_name(p);
+    else if (machine_get_tablet_device(machine) != NULL)
+        tablet_type = TABLET_TYPE_INTERNAL;   /* machine supplies one */
+    else
+        tablet_type = 0;
+
+    mouse_input_mode_initial = ini_section_get_int(cat, "mouse_input_mode_initial", 0);
 
     uint8_t joy_insn = 0;
     p = ini_section_get_string(cat, "joystick_type", NULL);
@@ -796,6 +979,14 @@ load_sound(void)
     } else {
         fm_driver = FM_DRV_NUKED;
     }
+
+    p = ini_section_get_string(cat, "sound_output_device", "");
+    strncpy(sound_output_device, p, sizeof(sound_output_device) - 1);
+    sound_output_device[sizeof(sound_output_device) - 1] = '\0';
+
+    sound_sample_rate = ini_section_get_int(cat, "sound_sample_rate", FREQ_48000);
+    if (sound_sample_rate != FREQ_44100 && sound_sample_rate != FREQ_48000)
+        sound_sample_rate = FREQ_48000;
 }
 
 /* Load "Network" section. */
@@ -812,7 +1003,13 @@ load_network(void)
     /* Handle legacy configuration which supported only one NIC */
     p = ini_section_get_string(cat, "net_card", NULL);
     if (p != NULL) {
-        nc->device_num = network_card_get_from_internal_name(p);
+        const device_t *nc_dev = network_card_get_from_old_internal_name(p);
+        if (nc_dev == NULL)
+            nc->device_num = network_card_get_from_internal_name(p);
+        else {
+            device_video_config_migrate(nc_dev, p, 0);
+            nc->device_num = network_card_get_from_internal_name((char *) nc_dev->internal_name);
+        }
 
         p = ini_section_get_string(cat, "net_type", NULL);
         if (p != NULL) {
@@ -838,9 +1035,9 @@ load_network(void)
             if (nc->net_type == NET_TYPE_PCAP) {
                 if ((network_dev_to_id(p) == -1) || (network_ndev == 1)) {
                     if (network_ndev == 1)
-                        ui_msgbox_header(MBX_ERROR, plat_get_string(STRING_PCAP_ERROR_NO_DEVICES), plat_get_string(STRING_PCAP_ERROR_DESC));
+                        ui_msgbox(MBX_ERROR, plat_get_string(STRING_PCAP_ERROR_NO_DEVICES));
                     else if (network_dev_to_id(p) == -1)
-                        ui_msgbox_header(MBX_ERROR, plat_get_string(STRING_PCAP_ERROR_INVALID_DEVICE), plat_get_string(STRING_PCAP_ERROR_DESC));
+                        ui_msgbox(MBX_ERROR, plat_get_string(STRING_PCAP_ERROR_INVALID_DEVICE));
                     strcpy(nc->host_dev_name, "none");
                 } else
                     strncpy(nc->host_dev_name, p, sizeof(nc->host_dev_name) - 1);
@@ -890,9 +1087,9 @@ load_network(void)
             if (nc->net_type == NET_TYPE_PCAP) {
                 if ((network_dev_to_id(p) == -1) || (network_ndev == 1)) {
                     if (network_ndev == 1)
-                        ui_msgbox_header(MBX_ERROR, plat_get_string(STRING_PCAP_ERROR_NO_DEVICES), plat_get_string(STRING_PCAP_ERROR_DESC));
+                        ui_msgbox(MBX_ERROR, plat_get_string(STRING_PCAP_ERROR_NO_DEVICES));
                     else if (network_dev_to_id(p) == -1)
-                        ui_msgbox_header(MBX_ERROR, plat_get_string(STRING_PCAP_ERROR_INVALID_DEVICE), plat_get_string(STRING_PCAP_ERROR_DESC));
+                        ui_msgbox(MBX_ERROR, plat_get_string(STRING_PCAP_ERROR_INVALID_DEVICE));
                     strcpy(nc->host_dev_name, "none");
                 } else
                     strncpy(nc->host_dev_name, p, sizeof(nc->host_dev_name) - 1);
@@ -965,11 +1162,60 @@ load_ports(void)
         sprintf(temp, "serial%d_enabled", c + 1);
         com_ports[c].enabled = !!ini_section_get_int(cat, temp, (c >= 2) ? 0 : 1);
 
+        /* Get old serial passthrough enable. */
         sprintf(temp, "serial%d_passthrough_enabled", c + 1);
-        serial_passthrough_enabled[c] = !!ini_section_get_int(cat, temp, 0);
+        int old_enable = ini_section_get_int(cat, temp, 0);
+        ini_section_delete_var(cat, temp);
 
-        if (serial_passthrough_enabled[c])
-            config_log("Serial Port %d: passthrough enabled.\n\n", c + 1);
+        /* Migrate serial passthrough device settings. */
+        sprintf(temp, "Serial Passthrough Device #%i", c + 1);
+        ini_section_t cat2 = ini_find_section(config, temp);
+        if (!cat2) {
+            sprintf(temp, "Serial Passthrough #%i", c + 1); /* as of 8699 */
+            cat2 = ini_find_section(config, temp);
+        }
+        int old_mode = ini_section_get_int(cat2, "mode", -1);
+        if (old_mode >= 3) { /* passthrough (4 on 5.3 Windows due to enum mistake, 3 otherwise) */
+            sprintf(temp, "Serial Passthrough (COM) #%i", c + 1);
+            ini_rename_section(cat2, temp);
+            ini_section_delete_var(cat2, "mode");
+            p = ini_section_get_string(cat2, "host_serial_path", "");
+            if (p[0])
+                ini_section_set_string(cat2, "path", p);
+            p = "serial_passthrough";
+        } else { /* pipe/pty */
+#ifdef _WIN32
+            sprintf(temp, "Named Pipe (COM) #%i", c + 1);
+            ini_rename_section(cat2, temp);
+            if (old_enable || (old_mode >= 0) || cat2)
+                ini_set_int(config, temp, "mode", (old_mode == 1) ? CHAR_PIPE_MODE_CLIENT : CHAR_PIPE_MODE_SERVER);
+            p = ini_section_get_string(cat2, "named_pipe", (old_enable || (old_mode >= 0) || cat2) ? "\\\\.\\pipe\\86Box\\test" : ""); /* use old default path if there's any evidence of passthrough having been enabled */
+            if (p[0])
+                ini_set_string(config, temp, "path", p); /* create section if not present */
+            p = "pipe";
+#else
+            sprintf(temp, "Virtual Console (COM) #%i", c + 1);
+            ini_rename_section(cat2, temp);
+            if (old_enable || (old_mode >= 0) || cat2)
+                ini_set_int(config, temp, "mode", CHAR_STDIO_MODE_PTY);
+            p = "stdio";
+#endif
+        }
+
+        /* Clean up old serial passthrough device settings. */
+        ini_section_delete_var(cat2, "host_serial_path");
+        ini_section_delete_var(cat2, "named_pipe");
+        ini_section_delete_var(cat2, "data_bits");
+        ini_section_delete_var(cat2, "stop_bits");
+        ini_section_delete_var(cat2, "baudrate");
+
+        /* Migrate old serial passthrough enable. */
+        sprintf(temp, "serial%d_device", c + 1);
+        if (old_enable)
+            ini_section_set_string(cat, temp, p);
+        else
+            p = ini_section_get_string(cat, temp, "none");
+        com_ports[c].device = char_get_from_internal_name(p, DEVICE_COM);
     }
 
     for (int c = 0; c < PARALLEL_MAX; c++) {
@@ -977,8 +1223,21 @@ load_ports(void)
         lpt_ports[c].enabled = !!ini_section_get_int(cat, temp, (c == 0) ? 1 : 0);
 
         sprintf(temp, "lpt%d_device", c + 1);
-        p                    = ini_section_get_string(cat, temp, "none");
-        lpt_ports[c].device  = lpt_device_get_from_internal_name(p);
+        p = ini_section_get_string(cat, temp, "none");
+        if (!strcmp(p, "plip")) {
+            /* Migrate old separate LPT PLIP device. */
+            int plip_num = network_card_get_from_internal_name(p);
+            for (int d = 0; d < NET_CARD_MAX; d++) {
+                if (net_cards_conf[d].device_num == plip_num) {
+                    sprintf(temp, "%s #%i", plip_device.name, d + 1);
+                    ini_set_int(config, temp, "port", c);
+                    break;
+                }
+            }
+            lpt_ports[c].device = 0;
+        } else {
+            lpt_ports[c].device = char_get_from_internal_name(!strcmp(p, "lpt_loopback") ? "loopback" : p, DEVICE_LPT);
+        }
     }
 
 #if 0
@@ -1164,7 +1423,7 @@ load_storage_controllers(void)
         if (p != NULL)
             hdc_current[c] = hdc_get_from_internal_name(p);
         else
-            hdc_current[c] = 0;
+            hdc_current[c] = -1;
     }
 
     /* Backwards compatibility for single HDC and standalone tertiary/quaternary IDE from v4.2 and older. */
@@ -1174,10 +1433,13 @@ load_storage_controllers(void)
         if (!legacy_cards[i] || (ini_section_get_int(cat, legacy_cards[i], 0) == 1)) {
             /* Migrate to the first available HDC slot. */
             for (; j < (sizeof(hdc_current) / sizeof(hdc_current[0])); j++) {
-                if (!hdc_current[j]) {
+                if (hdc_current[j] == -1) {
                     if (!legacy_cards[i]) {
                         if (!p) {
-                            hdc_current[j] = hdc_get_from_internal_name((j == 0) ? "internal" : "none");
+                            if ((j == 0) && machine_has_flags(machine, MACHINE_HDC))
+                                hdc_current[j] = 1;
+                            else
+                                hdc_current[j] = 0;
                         } else if (!strcmp(p, "xtide_plus")) {
                             hdc_current[j] = hdc_get_from_internal_name("xtide");
                             sprintf(temp, "PC/XT XTIDE #%i", j + 1);
@@ -1201,9 +1463,24 @@ load_storage_controllers(void)
     }
     ini_section_delete_var(cat, "hdc");
 
+    for (int c = min; c < HDC_MAX; c++) {
+        if (hdc_current[c] == -1) {
+            if ((c == 0) && machine_has_flags(machine, MACHINE_HDC))
+                hdc_current[c] = 1;
+            else
+                hdc_current[c] = 0;
+        }
+    }
+
     p = ini_section_get_string(cat, "cdrom_interface", NULL);
     if (p != NULL)
         cdrom_interface_current = cdrom_interface_get_from_internal_name(p);
+
+    /* The floppy tape is configured from the Tape drives tab now; the old
+       keys are stale and get cleaned up. */
+    ini_section_delete_var(cat, "floppy_tape_enabled");
+    ini_section_delete_var(cat, "floppy_tape_unit");
+    ini_section_delete_var(cat, "floppy_tape_file");
 
     if (machine_has_bus(machine, MACHINE_BUS_CASSETTE))
         cassette_enable = !!ini_section_get_int(cat, "cassette_enabled", 0);
@@ -1316,6 +1593,21 @@ load_hard_disks(void)
                &hdd[c].spt, &hdd[c].hpc, &hdd[c].tracks, (int *) &hdd[c].wp, s);
 
         hdd[c].bus_type = hdd_string_to_bus(s, 0);
+        memset(hdd[c].custom_vendor, 0, sizeof(hdd[c].custom_vendor));
+        memset(hdd[c].custom_model, 0, sizeof(hdd[c].custom_model));
+        memset(hdd[c].custom_version, 0, sizeof(hdd[c].custom_version));
+        sprintf(temp, "hdd_%02i_vendor", c + 1);
+        p = ini_section_get_string(cat, temp, NULL);
+        if (p)
+            strncpy(hdd[c].custom_vendor, p, sizeof(hdd[c].custom_vendor) - 1);
+        sprintf(temp, "hdd_%02i_model", c + 1);
+        p = ini_section_get_string(cat, temp, NULL);
+        if (p)
+            strncpy(hdd[c].custom_model, p, sizeof(hdd[c].custom_model) - 1);
+        sprintf(temp, "hdd_%02i_revision", c + 1);
+        p = ini_section_get_string(cat, temp, NULL);
+        if (p)
+            strncpy(hdd[c].custom_version, p, sizeof(hdd[c].custom_version) - 1);
         switch (hdd[c].bus_type) {
             default:
             case HDD_BUS_DISABLED:
@@ -1462,7 +1754,7 @@ load_hard_disks(void)
 
 #if defined(ENABLE_CONFIG_LOG) && (ENABLE_CONFIG_LOG == 2)
         if (*p != '\0')
-            config_log("HDD%d: %ls\n", c, hdd[c].fn);
+            config_log("HDD%d: %s\n", c, hdd[c].fn);
 #endif
 
         sprintf(temp, "hdd_%02i_vhd_blocksize", c + 1);
@@ -1554,7 +1846,7 @@ load_floppy_and_cdrom_drives(void)
 
 #if defined(ENABLE_CONFIG_LOG) && (ENABLE_CONFIG_LOG == 2)
         if (*p != '\0')
-            config_log("Floppy%d: %ls\n", c, floppyfns[c]);
+            config_log("Floppy%d: %s\n", c, floppyfns[c]);
 #endif
 
         sprintf(temp, "fdd_%02i_turbo", c + 1);
@@ -1677,6 +1969,12 @@ load_floppy_and_cdrom_drives(void)
 
             if (cdrom[c].ide_channel > 7)
                 cdrom[c].ide_channel = 7;
+        } else if (cdrom[c].bus_type == CDROM_BUS_LPT) {
+            sprintf(temp, "cdrom_%02i_lpt_port", c + 1);
+            cdrom[c].res = ini_section_get_int(cat, temp, 0);
+
+            if (cdrom[c].res >= PARALLEL_MAX)
+                cdrom[c].res = PARALLEL_MAX - 1;
         } else if (cdrom[c].bus_type == CDROM_BUS_SCSI) {
             sprintf(temp, "cdrom_%02i_scsi_location", c + 1);
             sprintf(tmp2, "%01u:%02u", SCSI_BUS_MAX, c & 3);
@@ -1727,7 +2025,7 @@ load_floppy_and_cdrom_drives(void)
 
 #if defined(ENABLE_CONFIG_LOG) && (ENABLE_CONFIG_LOG == 2)
         if (*p != '\0')
-            config_log("CD-ROM%d: %ls\n", c, cdrom[c].image_path);
+            config_log("CD-ROM%d: %s\n", c, cdrom[c].image_path);
 #endif
 
         for (int i = 0; i < MAX_PREV_IMAGES; i++) {
@@ -1916,6 +2214,12 @@ load_other_removable_devices(void)
 
             if (rdisk_drives[c].ide_channel > 7)
                 rdisk_drives[c].ide_channel = 7;
+        } else if (rdisk_drives[c].bus_type == RDISK_BUS_LPT) {
+            sprintf(temp, "rdisk_%02i_lpt_port", c + 1);
+            rdisk_drives[c].res = ini_section_get_int(cat, temp, 0);
+
+            if (rdisk_drives[c].res >= PARALLEL_MAX)
+                rdisk_drives[c].res = PARALLEL_MAX - 1;
         } else if (rdisk_drives[c].bus_type == RDISK_BUS_SCSI) {
             sprintf(temp, "rdisk_%02i_scsi_location", c + 1);
             sprintf(tmp2, "%01u:%02u", SCSI_BUS_MAX, c + 2);
@@ -1942,6 +2246,11 @@ load_other_removable_devices(void)
 
         if (rdisk_drives[c].bus_type != RDISK_BUS_SCSI) {
             sprintf(temp, "rdisk_%02i_scsi_location", c + 1);
+            ini_section_delete_var(cat, temp);
+        }
+
+        if (rdisk_drives[c].bus_type != RDISK_BUS_LPT) {
+            sprintf(temp, "rdisk_%02i_lpt_port", c + 1);
             ini_section_delete_var(cat, temp);
         }
 
@@ -2110,8 +2419,29 @@ go_to_mo:
             sscanf("00, none", "%u, %s", &tape_drives[c].type, s);
         tape_drives[c].bus_type = hdd_string_to_bus(s, 1);
 
+        sprintf(temp, "tape_%02i_medium_type", c + 1);
+        tape_drives[c].medium_type = ini_section_get_int(cat, temp,
+            (tape_drives[c].type < KNOWN_TAPE_DRIVE_TYPES) ?
+            tape_drive_types[tape_drives[c].type].default_media : 0);
+        if (tape_drives[c].medium_type >= KNOWN_TAPE_TYPES)
+            tape_drives[c].medium_type = 0;
+
         /* Default values, needed for proper operation of the Settings dialog. */
-        tape_drives[c].scsi_device_id = c + 4;
+        tape_drives[c].res = 0;
+
+        if (tape_drives[c].bus_type == TAPE_BUS_FDC) {
+            sprintf(temp, "tape_%02i_fdd_unit", c + 1);
+            tape_drives[c].fdd_unit = ini_section_get_int(cat, temp, 0);
+            if (tape_drives[c].fdd_unit >= FDD_NUM)
+                tape_drives[c].fdd_unit = 0;
+        } else if (tape_drives[c].bus_type == TAPE_BUS_LPT) {
+            sprintf(temp, "tape_%02i_lpt_port", c + 1);
+            tape_drives[c].lpt_port = ini_section_get_int(cat, temp, 0);
+            if (tape_drives[c].lpt_port >= PARALLEL_MAX)
+                tape_drives[c].lpt_port = 0;
+        } else {
+            tape_drives[c].scsi_device_id = c + 4;
+        }
 
         if (tape_drives[c].bus_type == TAPE_BUS_ATAPI) {
             sprintf(temp, "tape_%02i_ide_channel", c + 1);
@@ -2156,6 +2486,16 @@ go_to_mo:
         sprintf(temp, "tape_%02i_scsi_id", c + 1);
         ini_section_delete_var(cat, temp);
 
+        if (tape_drives[c].bus_type != TAPE_BUS_FDC) {
+            sprintf(temp, "tape_%02i_fdd_unit", c + 1);
+            ini_section_delete_var(cat, temp);
+        }
+
+        if (tape_drives[c].bus_type != TAPE_BUS_LPT) {
+            sprintf(temp, "tape_%02i_lpt_port", c + 1);
+            ini_section_delete_var(cat, temp);
+        }
+
         sprintf(temp, "tape_%02i_image_path", c + 1);
         p = ini_section_get_string(cat, temp, "");
 
@@ -2193,6 +2533,9 @@ go_to_mo:
             sprintf(temp, "tape_%02i_image_path", c + 1);
             ini_section_delete_var(cat, temp);
 
+            sprintf(temp, "tape_%02i_medium_type", c + 1);
+            ini_section_delete_var(cat, temp);
+
             for (int i = 0; i < MAX_PREV_IMAGES; i++) {
                 sprintf(temp, "tape_%02i_image_history_%02i", c + 1, i + 1);
                 ini_section_delete_var(cat, temp);
@@ -2213,6 +2556,7 @@ load_other_peripherals(void)
     postcard_enabled       = !!ini_section_get_int(cat, "postcard_enabled", 0);
     unittester_enabled     = !!ini_section_get_int(cat, "unittester_enabled", 0);
     novell_keycard_enabled = !!ini_section_get_int(cat, "novell_keycard_enabled", 0);
+    softpower_enabled      = !!ini_section_get_int(cat, "softpower_enabled", 0);
 
     if (!bugger_enabled)
         ini_section_delete_var(cat, "bugger_enabled");
@@ -2225,6 +2569,20 @@ load_other_peripherals(void)
 
     if (!novell_keycard_enabled)
         ini_section_delete_var(cat, "novell_keycard_enabled");
+
+    if (!softpower_enabled)
+        ini_section_delete_var(cat, "softpower_enabled");
+
+    // MCA RAM Boards
+    for (uint8_t c = 0; c < MCAMEM_MAX; c++) {
+        sprintf(temp, "mcamem%d_type", c);
+
+        p              = ini_section_get_string(cat, temp, "none");
+        mcamem_type[c] = mcamem_get_from_internal_name(p);
+
+        if (!strcmp(p, "none"))
+            ini_section_delete_var(cat, temp);
+    }
 
     // ISA RAM Boards
     for (uint8_t c = 0; c < ISAMEM_MAX; c++) {
@@ -2309,6 +2667,48 @@ load_gl3_shaders(void)
         }
     }
 }
+/* Load Vulkan renderer options. */
+static void
+load_vk_shaders(void)
+{
+    ini_section_t cat = ini_find_section(config, "VK Shaders");
+    char         *p;
+    char          temp[512];
+    int           i = 0, shaders = 0;
+    memset(temp, 0, sizeof(temp));
+    memset(vk_shader_file, 0, sizeof(vk_shader_file));
+
+    shaders = ini_section_get_int(cat, "shaders", 0);
+    if (shaders > MAX_USER_SHADERS)
+        shaders = MAX_USER_SHADERS;
+
+    if (shaders == 0) {
+        ini_section_t general = ini_find_section(config, "General");
+        if (general) {
+            p = ini_section_get_string(general, "video_vk_shader", NULL);
+            if (p) {
+                if (strlen(p) > 511)
+                    fatal("Configuration: Length of video_vk_shader is more than 511\n");
+                else
+                    strncpy(vk_shader_file[0], p, 511);
+                ini_delete_var(config, general, "video_vk_shader");
+                return;
+            }
+        }
+    }
+
+    for (i = 0; i < shaders; i++) {
+        temp[0] = 0;
+        snprintf(temp, 512, "shader%d", i);
+        p = ini_section_get_string(cat, temp, "");
+        if (p[0]) {
+            strncpy(vk_shader_file[i], p, 512);
+        } else {
+            vk_shader_file[i][0] = 0;
+            break;
+        }
+    }
+}
 #endif
 
 /* Load "Keybinds" section. */
@@ -2338,7 +2738,11 @@ load_keybinds(void)
               */
              strcpy(acc_keys[x].seq, p);
         }
+
+        ini_section_delete_var(cat, acc_keys[x].name);
     }
+
+    ini_delete_section_if_empty(config, cat);
 }
 
 void
@@ -2390,7 +2794,6 @@ config_load(void)
         scale                = 1;
         machine              = machine_get_machine_from_internal_name("ibmpc");
         dpi_scale            = 1;
-        do_auto_pause        = 0;
         force_constant_mouse = 0;
 
         cpu_override_interpreter = 0;
@@ -2437,6 +2840,8 @@ config_load(void)
             isarom_type[i] = 0;
         for (i = 0; i < ISAMEM_MAX; i++)
             isamem_type[i] = 0;
+        for (i = 0; i < MCAMEM_MAX; i++)
+            mcamem_type[i] = 0;
 
         cassette_enable = 1;
         memset(cassette_fname, 0x00, sizeof(cassette_fname));
@@ -2446,6 +2851,10 @@ config_load(void)
         cassette_append       = 0;
         cassette_pcm          = 0;
         cassette_ui_writeprot = 0;
+
+        cpu_dyn_accurate_fpu_env = 0;
+
+        gdbstub_port          = 12345;
 
         config_log("VM config file not present or invalid!\n");
     } else {
@@ -2466,8 +2875,10 @@ config_load(void)
         load_other_peripherals();       /* Other peripherals */
 #ifndef USE_SDL_UI
         load_gl3_shaders();             /* GL3 Shaders */
+        load_vk_shaders();              /* VK Shaders */
 #endif
-        load_keybinds();                /* Load shortcut keybinds */
+        if (!kb_loaded)
+            load_keybinds();            /* Load shortcut keybinds */
 
         /* Migrate renamed device configurations. */
         c = ini_find_section(config, "MDA");
@@ -2489,17 +2900,21 @@ config_load(void)
         config_log("VM config loaded.\n\n");
     }
 
+    /* Protecet concurrent config_save() calls from the emulation
+       thread and UI thread. */
+    if (config_mutex == NULL)
+        config_mutex = thread_create_mutex();
+
     /* Mark the configuration as changed. */
     config_changed = 1;
 
     video_copy = (video_grayscale || invert_display) ? video_transform_copy : memcpy;
 }
 
-/* Save global configuration */
 static void
-save_global(void)
+save_global_emulator(void)
 {
-    ini_section_t cat = ini_find_or_create_section(global, "");
+    ini_section_t cat = ini_find_or_create_section(global, "Emulator");
     char          buffer[512] = { 0 };
 
     if (lang_id == plat_language_code(DEFAULT_LANGUAGE))
@@ -2519,6 +2934,16 @@ save_global(void)
     else
         ini_section_delete_var(cat, "open_dir_usr_path");
 
+    if (do_auto_pause)
+        ini_section_set_int(cat, "do_auto_pause", do_auto_pause);
+    else
+        ini_section_delete_var(cat, "do_auto_pause");
+
+    if (do_auto_dialog_pause)
+        ini_section_set_int(cat, "do_auto_dialog_pause", do_auto_dialog_pause);
+    else
+        ini_section_delete_var(cat, "do_auto_dialog_pause");
+
     if (confirm_reset != 1)
         ini_section_set_int(cat, "confirm_reset", confirm_reset);
     else
@@ -2534,15 +2959,11 @@ save_global(void)
     else
         ini_section_delete_var(cat, "confirm_save");
 
-    if (inhibit_multimedia_keys == 1)
-        ini_section_set_int(cat, "inhibit_multimedia_keys", inhibit_multimedia_keys);
-    else
-        ini_section_delete_var(cat, "inhibit_multimedia_keys");
 
-    if (mouse_sensitivity != 1.0)
-        ini_section_set_double(cat, "mouse_sensitivity", mouse_sensitivity);
+    if (chd_precache_level)
+        ini_section_set_int(cat, "chd_precache_level", chd_precache_level);
     else
-        ini_section_delete_var(cat, "mouse_sensitivity");
+        ini_section_delete_var(cat, "chd_precache_level");
 
     if (vmm_disabled != 0)
         ini_section_set_int(cat, "vmm_disabled", vmm_disabled);
@@ -2559,6 +2980,56 @@ save_global(void)
     } else {
         ini_section_delete_var(cat, "vmm_path");
     }
+
+    ini_delete_section_if_empty(global, cat);
+}
+
+static void
+save_global_input(void)
+{
+    ini_section_t cat = ini_find_or_create_section(global, "Input");
+
+    if (inhibit_multimedia_keys == 1)
+        ini_section_set_int(cat, "inhibit_multimedia_keys", inhibit_multimedia_keys);
+    else
+        ini_section_delete_var(cat, "inhibit_multimedia_keys");
+
+    if (mouse_sensitivity != 1.0)
+        ini_section_set_double(cat, "mouse_sensitivity", mouse_sensitivity);
+    else
+        ini_section_delete_var(cat, "mouse_sensitivity");
+
+    ini_delete_section_if_empty(global, cat);
+}
+
+/* Save "Keybinds" section. */
+static void
+save_global_keybinds(void)
+{
+    ini_section_t cat = ini_find_or_create_section(global, "Keybinds");
+
+    for (int x = 0; x < NUM_ACCELS; x++) {
+        /* Has accelerator been changed from default? */
+        if (strcmp(def_acc_keys[x].seq, acc_keys[x].seq) == 0)
+            ini_section_delete_var(cat, acc_keys[x].name);
+        /* Check for a cleared binding to avoid saving it as an empty string */
+        else if (acc_keys[x].seq[0] == '\0')
+            ini_section_set_string(cat, acc_keys[x].name, "none");
+        else
+            ini_section_set_string(cat, acc_keys[x].name, acc_keys[x].seq);
+    }
+
+    ini_delete_section_if_empty(global, cat);
+}
+
+/* Save global configuration */
+static void
+save_global(void)
+{
+    save_global_emulator();
+    save_global_input();
+
+    save_global_keybinds();
 }
 
 /* Save scan code mappings. */
@@ -2621,6 +3092,11 @@ save_general(void)
         ini_section_delete_var(cat, "force_43");
     else
         ini_section_set_int(cat, "force_43", force_43);
+
+    if (force_device_aspect == 0)
+        ini_section_delete_var(cat, "force_device_aspect");
+    else
+        ini_section_set_int(cat, "force_device_aspect", force_device_aspect);
 
     if (scale == 1)
         ini_section_delete_var(cat, "scale");
@@ -2703,6 +3179,11 @@ save_general(void)
     else
         ini_section_delete_var(cat, "enable_discord");
 
+    if (video_vk_device != 0)
+        ini_section_set_int(cat, "video_vk_device", video_vk_device);
+    else
+        ini_section_delete_var(cat, "video_vk_device");
+
     if (video_framerate != -1)
         ini_section_set_int(cat, "video_gl_framerate", video_framerate);
     else
@@ -2711,11 +3192,6 @@ save_general(void)
         ini_section_set_int(cat, "video_gl_vsync", video_vsync);
     else
         ini_section_delete_var(cat, "video_gl_vsync");
-
-    if (do_auto_pause)
-        ini_section_set_int(cat, "do_auto_pause", do_auto_pause);
-    else
-        ini_section_delete_var(cat, "do_auto_pause");
 
     if (video_gl_input_scale != 1.0) {
         ini_section_set_double(cat, "video_gl_input_scale", video_gl_input_scale);
@@ -2748,10 +3224,25 @@ save_general(void)
     else
         ini_section_delete_var(cat, "emu_build_num");
 
-  if (strnlen(uuid, sizeof(uuid) - 1) > 0)
+#ifdef USE_DYNAREC
+#   ifdef USE_NEW_DYNAREC
+    ini_section_set_string(cat, "emu_build_dynarec_type", "new");
+#   else
+    ini_section_set_string(cat, "emu_build_dynarec_type", "old");
+#   endif
+#else
+    ini_section_delete_var(cat, "emu_build_dynarec_type");
+#endif
+
+    if (strnlen(uuid, sizeof(uuid) - 1) > 0)
         ini_section_set_string(cat, "uuid", uuid);
     else
         ini_section_delete_var(cat, "uuid");
+
+    if (gdbstub_port == 12345)
+        ini_section_delete_var(cat, "gdbstub_port");
+    else
+        ini_section_set_int(cat, "gdbstub_port", gdbstub_port);
 
     ini_delete_section_if_empty(config, cat);
 }
@@ -2844,6 +3335,11 @@ save_machine(void)
         ini_section_delete_var(cat, "pit_mode");
     else
         ini_section_set_int(cat, "pit_mode", pit_mode);
+
+    if (cpu_dyn_accurate_fpu_env == 0)
+        ini_section_delete_var(cat, "cpu_dyn_accurate_fpu_env");
+    else
+        ini_section_set_int(cat, "cpu_dyn_accurate_fpu_env", cpu_dyn_accurate_fpu_env);
 
     ini_delete_section_if_empty(config, cat);
 }
@@ -2945,6 +3441,8 @@ save_input_devices(void)
 
     ini_section_set_string(cat, "mouse_type", mouse_get_internal_name(mouse_type));
 
+    ini_section_set_string(cat, "tablet_type", tablet_get_internal_name(tablet_type));
+
     uint8_t joy_insn = 0;
     if (!joystick_type[joy_insn]) {
         ini_section_delete_var(cat, "joystick_type");
@@ -3008,6 +3506,11 @@ save_input_devices(void)
         ini_section_set_int(cat, "tablet_tool_type", tablet_tool_type);
     else
         ini_section_delete_var(cat, "tablet_tool_type");
+
+    if (mouse_input_mode_initial != 0)
+        ini_section_set_int(cat, "mouse_input_mode_initial", mouse_input_mode_initial);
+    else
+        ini_section_delete_var(cat, "mouse_input_mode_initial");
 
     ini_delete_section_if_empty(config, cat);
 }
@@ -3083,6 +3586,16 @@ save_sound(void)
         ini_section_delete_var(cat, "fm_driver");
     else
         ini_section_set_string(cat, "fm_driver", "ymfm");
+
+    if (sound_output_device[0] == '\0')
+        ini_section_delete_var(cat, "sound_output_device");
+    else
+        ini_section_set_string(cat, "sound_output_device", sound_output_device);
+
+    if (sound_sample_rate == FREQ_48000)
+        ini_section_delete_var(cat, "sound_sample_rate");
+    else
+        ini_section_set_int(cat, "sound_sample_rate", sound_sample_rate);
 
     ini_delete_section_if_empty(config, cat);
 }
@@ -3207,11 +3720,11 @@ save_ports(void)
         else
             ini_section_set_int(cat, temp, com_ports[c].enabled);
 
-        sprintf(temp, "serial%d_passthrough_enabled", c + 1);
-        if (serial_passthrough_enabled[c])
-            ini_section_set_int(cat, temp, 1);
-        else
+        sprintf(temp, "serial%d_device", c + 1);
+        if (com_ports[c].device == 0)
             ini_section_delete_var(cat, temp);
+        else
+            ini_section_set_string(cat, temp, char_get_device(com_ports[c].device)->internal_name);
     }
 
     for (int c = 0; c < PARALLEL_MAX; c++) {
@@ -3226,7 +3739,7 @@ save_ports(void)
         if (lpt_ports[c].device == 0)
             ini_section_delete_var(cat, temp);
         else
-            ini_section_set_string(cat, temp, lpt_device_get_internal_name(lpt_ports[c].device));
+            ini_section_set_string(cat, temp, char_get_device(lpt_ports[c].device)->internal_name);
     }
 
 #if 0
@@ -3260,26 +3773,6 @@ save_ports(void)
     ini_delete_section_if_empty(config, cat);
 }
 
-/* Save "Keybinds" section. */
-static void
-save_keybinds(void)
-{
-    ini_section_t cat = ini_find_or_create_section(config, "Keybinds");
-
-    for (int x = 0; x < NUM_ACCELS; x++) {
-        /* Has accelerator been changed from default? */
-        if (strcmp(def_acc_keys[x].seq, acc_keys[x].seq) == 0)
-            ini_section_delete_var(cat, acc_keys[x].name);
-        /* Check for a cleared binding to avoid saving it as an empty string */
-        else if (acc_keys[x].seq[0] == '\0')
-            ini_section_set_string(cat, acc_keys[x].name, "none");
-        else
-            ini_section_set_string(cat, acc_keys[x].name, acc_keys[x].seq);
-    }
-
-    ini_delete_section_if_empty(config, cat);
-}
-
 static void
 save_image_file(char *cat, char *var, char *src)
 {
@@ -3290,17 +3783,20 @@ save_image_file(char *cat, char *var, char *src)
     char *above2     = NULL;
     char *above3     = NULL;
 
-    if ((slash = memrmem(usr_path + strlen(usr_path) - 2, usr_path, "/")) != NULL) {
+    size_t len = strlen(usr_path);
+    if ((len >= 2) && ((slash = memrmem(usr_path + len - 2, usr_path, "/")) != NULL)) {
         slash++;
         above = (char *) calloc(1, slash - usr_path + 1);
         memcpy(above, usr_path, slash - usr_path);
 
-        if ((slash = memrmem(above + strlen(above) - 2, above, "/")) != NULL) {
+        len = strlen(above);
+        if ((len >= 2) && ((slash = memrmem(above + len - 2, above, "/")) != NULL)) {
             slash++;
             above2 = (char *) calloc(1, slash - above + 1);
             memcpy(above2, above, slash - above);
 
-            if ((slash = memrmem(above2 + strlen(above2) - 2, above2, "/")) != NULL) {
+            len = strlen(above2);
+            if ((len >= 2) && ((slash = memrmem(above2 + len - 2, above2, "/")) != NULL)) {
                 slash++;
                 above3 = (char *) calloc(1, slash - above2 + 1);
                 memcpy(above3, above2, slash - above2);
@@ -3410,6 +3906,11 @@ save_storage_controllers(void)
         ini_section_set_string(cat, "cdrom_interface",
                                cdrom_interface_get_internal_name(cdrom_interface_current));
 
+    /* The floppy tape is configured from the Tape drives tab now. */
+    ini_section_delete_var(cat, "floppy_tape_enabled");
+    ini_section_delete_var(cat, "floppy_tape_unit");
+    ini_section_delete_var(cat, "floppy_tape_file");
+
     if (cassette_enable == 0)
         ini_section_delete_var(cat, "cassette_enabled");
     else
@@ -3516,6 +4017,21 @@ save_other_peripherals(void)
     else
         ini_section_set_int(cat, "novell_keycard_enabled", novell_keycard_enabled);
 
+    if (softpower_enabled == 0)
+        ini_section_delete_var(cat, "softpower_enabled");
+    else
+        ini_section_set_int(cat, "softpower_enabled", softpower_enabled);
+
+    // MCA RAM Boards
+    for (uint8_t c = 0; c < MCAMEM_MAX; c++) {
+        sprintf(temp, "mcamem%d_type", c);
+        if (mcamem_type[c] == 0)
+            ini_section_delete_var(cat, temp);
+        else
+            ini_section_set_string(cat, temp,
+                                   mcamem_get_internal_name(mcamem_type[c]));
+    }
+
     // ISA RAM Boards
     for (uint8_t c = 0; c < ISAMEM_MAX; c++) {
         sprintf(temp, "isamem%d_type", c);
@@ -3572,6 +4088,38 @@ save_gl3_shaders(void)
             temp[0] = 0;
             snprintf(temp, 512, "shader%d", i);
             ini_section_set_string(cat, temp, gl3_shader_file[i]);
+        }
+    }
+
+    ini_delete_section_if_empty(config, cat);
+}
+
+/* Save "VK Shaders" section. */
+static void
+save_vk_shaders(void)
+{
+    ini_section_t cat = ini_find_or_create_section(config, "VK Shaders");
+    char          temp[512];
+    int shaders = 0, i = 0;
+
+    for (i = 0; i < MAX_USER_SHADERS; i++) {
+        if (vk_shader_file[i][0] == 0) {
+            temp[0] = 0;
+            snprintf(temp, 512, "shader%d", i);
+            ini_section_delete_var(cat, temp);
+            break;
+        }
+        shaders++;
+    }
+
+    ini_section_set_int(cat, "shaders", shaders);
+    if (shaders == 0) {
+        ini_section_delete_var(cat, "shaders");
+    } else {
+        for (i = 0; i < shaders; i++) {
+            temp[0] = 0;
+            snprintf(temp, 512, "shader%d", i);
+            ini_section_set_string(cat, temp, vk_shader_file[i]);
         }
     }
 
@@ -3671,6 +4219,25 @@ save_hard_disks(void)
             ini_section_delete_var(cat, temp);
         else
             ini_section_set_string(cat, temp, hdd_preset_get_internal_name(hdd[c].speed_preset));
+
+        sprintf(temp, "hdd_%02i_vendor", c + 1);
+        if ((hdd[c].bus_type == HDD_BUS_IDE || hdd[c].bus_type == HDD_BUS_ATAPI || hdd[c].bus_type == HDD_BUS_SCSI) &&
+            hdd_preset_is_generic(hdd[c].speed_preset) && hdd[c].custom_vendor[0])
+            ini_section_set_string(cat, temp, hdd[c].custom_vendor);
+        else
+            ini_section_delete_var(cat, temp);
+        sprintf(temp, "hdd_%02i_model", c + 1);
+        if ((hdd[c].bus_type == HDD_BUS_IDE || hdd[c].bus_type == HDD_BUS_ATAPI || hdd[c].bus_type == HDD_BUS_SCSI) &&
+            hdd_preset_is_generic(hdd[c].speed_preset) && hdd[c].custom_model[0])
+            ini_section_set_string(cat, temp, hdd[c].custom_model);
+        else
+            ini_section_delete_var(cat, temp);
+        sprintf(temp, "hdd_%02i_revision", c + 1);
+        if ((hdd[c].bus_type == HDD_BUS_IDE || hdd[c].bus_type == HDD_BUS_ATAPI || hdd[c].bus_type == HDD_BUS_SCSI) &&
+            hdd_preset_is_generic(hdd[c].speed_preset) && hdd[c].custom_version[0])
+            ini_section_set_string(cat, temp, hdd[c].custom_version);
+        else
+            ini_section_delete_var(cat, temp);
 
         sprintf(temp, "hdd_%02i_audio", c + 1);
         if (!hdd_is_valid(c) || hdd[c].audio_profile == 0) {
@@ -3891,6 +4458,12 @@ save_other_removable_devices(void)
             ini_section_set_string(cat, temp, tmp2);
         }
 
+        sprintf(temp, "rdisk_%02i_lpt_port", c + 1);
+        if (rdisk_drives[c].bus_type != RDISK_BUS_LPT)
+            ini_section_delete_var(cat, temp);
+        else
+            ini_section_set_int(cat, temp, rdisk_drives[c].res);
+
         sprintf(temp, "rdisk_%02i_image_path", c + 1);
         if ((rdisk_drives[c].bus_type == 0) || (strlen(rdisk_drives[c].image_path) == 0))
             ini_section_delete_var(cat, temp);
@@ -3977,6 +4550,18 @@ save_other_removable_devices(void)
         sprintf(temp, "tape_%02i_scsi_id", c + 1);
         ini_section_delete_var(cat, temp);
 
+        sprintf(temp, "tape_%02i_fdd_unit", c + 1);
+        if (tape_drives[c].bus_type != TAPE_BUS_FDC)
+            ini_section_delete_var(cat, temp);
+        else
+            ini_section_set_int(cat, temp, tape_drives[c].fdd_unit);
+
+        sprintf(temp, "tape_%02i_lpt_port", c + 1);
+        if (tape_drives[c].bus_type != TAPE_BUS_LPT)
+            ini_section_delete_var(cat, temp);
+        else
+            ini_section_set_int(cat, temp, tape_drives[c].lpt_port);
+
         sprintf(temp, "tape_%02i_writeprot", c + 1);
         ini_section_delete_var(cat, temp);
 
@@ -3994,6 +4579,12 @@ save_other_removable_devices(void)
             ini_section_delete_var(cat, temp);
         else
             save_image_file(cat, temp, tape_drives[c].image_path);
+
+        sprintf(temp, "tape_%02i_medium_type", c + 1);
+        if (tape_drives[c].bus_type == 0)
+            ini_section_delete_var(cat, temp);
+        else
+            ini_section_set_int(cat, temp, tape_drives[c].medium_type);
 
         for (int i = 0; i < MAX_PREV_IMAGES; i++) {
             sprintf(temp, "tape_%02i_image_history_%02i", c + 1, i + 1);
@@ -4018,6 +4609,9 @@ config_save_global(void)
 void
 config_save(void)
 {
+    if (config_mutex)
+        thread_wait_mutex(config_mutex);
+
     save_general();                 /* General */
     for (uint8_t i = 0; i < MONITORS_NUM; i++)
         save_monitor(i);            /* Monitors */
@@ -4035,12 +4629,15 @@ config_save(void)
     save_other_peripherals();       /* Other peripherals */
 #ifndef USE_SDL_UI
     save_gl3_shaders();             /* GL3 Shaders */
+    save_vk_shaders();              /* GL3 Shaders */
 #endif
-    save_keybinds();                /* Key bindings */
 
     ini_write(config, cfg_path);
 
     config_save_global();
+
+    if (config_mutex)
+        thread_release_mutex(config_mutex);
 }
 
 ini_t

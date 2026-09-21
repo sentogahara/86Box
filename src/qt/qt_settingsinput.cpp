@@ -12,11 +12,6 @@
  *
  *          Copyright 2021 Joakim L. Gilje
  */
-#include "qt_settingsinput.hpp"
-#include "ui_qt_settingsinput.h"
-#include "qt_mainwindow.hpp"
-#include "qt_progsettings.hpp"
-
 #include <QDebug>
 #include <QKeySequence>
 #include <QMessageBox>
@@ -32,12 +27,22 @@ extern "C" {
 #include <86box/ui.h>
 }
 
+#include "qt_settings_completer.hpp"
+#include "qt_settingsinput.hpp"
+#include "ui_qt_settingsinput.h"
+#include "qt_mainwindow.hpp"
+#include "qt_preferences.hpp"
+
 #include "qt_models_common.hpp"
 #include "qt_deviceconfig.hpp"
 #include "qt_joystickconfiguration.hpp"
-#include "qt_keybind.hpp"
+#include "qt_defs.hpp"
+
+#include "qt_settingsdisplay.hpp"
 
 extern MainWindow *main_window;
+
+joystick_state_t      org_joystick_state[GAMEPORT_MAX][MAX_JOYSTICKS];
 
 SettingsInput::SettingsInput(QWidget *parent)
     : QWidget(parent)
@@ -45,19 +50,101 @@ SettingsInput::SettingsInput(QWidget *parent)
 {
     ui->setupUi(this);
 
+    scKeyboard                      = new SettingsCompleter(ui->comboBoxKeyboard, nullptr);
+    scMouse                         = new SettingsCompleter(ui->comboBoxMouse, nullptr);
+    scTablet                        = new SettingsCompleter(ui->comboBoxTablet, nullptr);
+
+    scJoystick0                     = new SettingsCompleter(ui->comboBoxJoystick0, nullptr);
+
+    kbd_config_changed    = 0;
+    mouse_config_changed  = 0;
+    tablet_config_changed = 0;
+
+    for (int i = 0; i < GAMEPORT_MAX; i++) {
+        for (int j = 0; j < MAX_JOYSTICKS; j++)
+             memcpy(&(org_joystick_state[i][j]), &(joystick_state[i][j]), sizeof(joystick_state_t));
+    }
+
+    keyboardType = keyboard_type;
+    mouseType    = mouse_type;
+    tabletType   = tablet_type;
+    joystickType = joystick_type[0];
+
     onCurrentMachineChanged(machine);
 }
 
 SettingsInput::~SettingsInput()
 {
+    delete scJoystick0;
+
+    delete scMouse;
+    delete scKeyboard;
+
     delete ui;
 }
 
-void
-SettingsInput::save()
+static int
+has_joystick_state_changed(int gameport_nr, int joystick_nr)
 {
+    int has_changed = 0;
+
+    has_changed |= (joystick_state[gameport_nr][joystick_nr].plat_joystick_nr !=
+                    org_joystick_state[gameport_nr][joystick_nr].plat_joystick_nr);
+
+    for (int axis_nr = 0; axis_nr < MAX_JOY_AXES; axis_nr++) {
+        has_changed |= (joystick_state[gameport_nr][joystick_nr].axis_mapping[axis_nr] !=
+                        org_joystick_state[gameport_nr][joystick_nr].axis_mapping[axis_nr]);
+    }
+
+    for (int button_nr = 0; button_nr < MAX_JOY_BUTTONS; button_nr++) {
+        has_changed |= (joystick_state[gameport_nr][joystick_nr].button_mapping[button_nr] !=
+                        org_joystick_state[gameport_nr][joystick_nr].button_mapping[button_nr]);
+    }
+
+    for (int pov_nr = 0; pov_nr < MAX_JOY_POVS; pov_nr++) {
+        has_changed |= (joystick_state[gameport_nr][joystick_nr].pov_mapping[pov_nr][0] !=
+                        org_joystick_state[gameport_nr][joystick_nr].pov_mapping[pov_nr][0]);
+        has_changed |= (joystick_state[gameport_nr][joystick_nr].pov_mapping[pov_nr][1] !=
+                        org_joystick_state[gameport_nr][joystick_nr].pov_mapping[pov_nr][1]);
+    }
+
+    return has_changed;
+}
+
+int
+SettingsInput::changed()
+{
+    int has_changed = 0;
+
+    has_changed |= (keyboard_type != ui->comboBoxKeyboard->currentData().toInt());
+    has_changed |= kbd_config_changed;
+    has_changed |= (mouse_type    != ui->comboBoxMouse->currentData().toInt());
+    has_changed |= mouse_config_changed;
+    has_changed |= (tablet_type   != ui->comboBoxTablet->currentData().toInt());
+    has_changed |= tablet_config_changed;
+
+    has_changed |= (joystick_type[0] != ui->comboBoxJoystick0->currentData().toInt());
+
+    for (int i = 0; i < 4; i++)
+        has_changed |= has_joystick_state_changed(0, i);
+
+    return has_changed ? (SETTINGS_CHANGED | SETTINGS_REQUIRE_HARD_RESET) : 0;
+}
+
+void
+SettingsInput::restore()
+{
+}
+
+void
+SettingsInput::save(int soft)
+{
+    if (soft)
+        return;
+
     keyboard_type = ui->comboBoxKeyboard->currentData().toInt();
     mouse_type    = ui->comboBoxMouse->currentData().toInt();
+    tablet_type   = ui->comboBoxTablet->currentData().toInt();
 
     joystick_type[0] = ui->comboBoxJoystick0->currentData().toInt();
 }
@@ -67,6 +154,15 @@ SettingsInput::onCurrentMachineChanged(int machineId)
 {
     // win_settings_video_proc, WM_INITDIALOG
     this->machineId = machineId;
+    auto curKeyboardType = keyboardType;
+    auto curMouseType = mouseType;
+    auto curTabletType = tabletType;
+    auto curJoystickType = joystickType;
+
+    scKeyboard->removeRows();
+    scMouse->removeRows();
+
+    scJoystick0->removeRows();
 
     auto *keyboardModel = ui->comboBoxKeyboard->model();
     auto  removeRows    = keyboardModel->rowCount();
@@ -75,12 +171,13 @@ SettingsInput::onCurrentMachineChanged(int machineId)
 
     int c           = 0;
     int has_int_kbd = !!machine_has_flags(machineId, MACHINE_KEYBOARD);
+    int has_cga_pen = Settings::settings && Settings::settings->display && !!Settings::settings->display->isLightPenUsable();
 
     for (int i = 0; i < keyboard_get_ndev(); ++i) {
         const auto *dev  = keyboard_get_device(i);
         int         ikbd = (i == KEYBOARD_TYPE_INTERNAL);
 
-        int pc5086_filter = (strstr(keyboard_get_internal_name(i), "ps") && machines[machineId].init == machine_xt_pc5086_init);
+        bool pc5086_filter = (strstr(keyboard_get_internal_name(i), "ps") && machines[machineId].init == machine_xt_pc5086_init);
 
         if ((ikbd != has_int_kbd) || !device_is_valid(dev, machineId) || pc5086_filter)
             continue;
@@ -93,7 +190,9 @@ SettingsInput::onCurrentMachineChanged(int machineId)
         keyboardModel->setData(idx, name, Qt::DisplayRole);
         keyboardModel->setData(idx, i, Qt::UserRole);
 
-        if (i == keyboard_type)
+        scKeyboard->addDevice(nullptr, name);
+
+        if (i == curKeyboardType)
             selectedRow = row - removeRows;
 
         c++;
@@ -107,6 +206,7 @@ SettingsInput::onCurrentMachineChanged(int machineId)
     else
         ui->comboBoxKeyboard->setEnabled(true);
 
+    // Mouse.
     auto *mouseModel = ui->comboBoxMouse->model();
     removeRows       = mouseModel->rowCount();
 
@@ -127,12 +227,54 @@ SettingsInput::onCurrentMachineChanged(int machineId)
         mouseModel->setData(idx, name, Qt::DisplayRole);
         mouseModel->setData(idx, i, Qt::UserRole);
 
-        if (i == mouse_type)
+        scMouse->addDevice(nullptr, name);
+
+        if (i == curMouseType)
             selectedRow = row - removeRows;
     }
     mouseModel->removeRows(0, removeRows);
     ui->comboBoxMouse->setCurrentIndex(-1);
     ui->comboBoxMouse->setCurrentIndex(selectedRow);
+
+    // Tablet.
+    auto *tabletModel = ui->comboBoxTablet->model();
+    removeRows        = tabletModel->rowCount();
+
+    selectedRow = 0;
+    for (int i = 0; i < tablet_get_ndev(); ++i) {
+        const auto *dev = tablet_get_device(i);
+        if (device_is_valid(dev, machineId) == 0)
+            continue;
+
+        if (!has_cga_pen && !strcmp(tablet_get_internal_name(i), "cga_lightpen"))
+            continue;
+
+        /* Allow tablet types other than the "internal device" to be chosen. */
+        QString name;
+        if (i == TABLET_TYPE_INTERNAL) {
+            const device_t *mdev = machine_get_tablet_device(machineId);
+            /* Use the device name instead of hardcoding it here. */
+            if (mdev != nullptr)
+                name = tr("Internal device (%1)").arg(QString::fromUtf8(mdev->name));
+            else
+                name = QString::fromUtf8(dev->name);
+        } else
+            name = DeviceConfig::DeviceName(dev, tablet_get_internal_name(i), 0);
+        int     row  = tabletModel->rowCount();
+        tabletModel->insertRow(row);
+        auto idx = tabletModel->index(row, 0);
+
+        tabletModel->setData(idx, name, Qt::DisplayRole);
+        tabletModel->setData(idx, i, Qt::UserRole);
+
+        scTablet->addDevice(nullptr, name);
+
+        if (i == curTabletType)
+            selectedRow = row - removeRows;
+    }
+    tabletModel->removeRows(0, removeRows);
+    ui->comboBoxTablet->setCurrentIndex(-1);
+    ui->comboBoxTablet->setCurrentIndex(selectedRow);
 
     // Joysticks
     int         i             = 0;
@@ -142,7 +284,8 @@ SettingsInput::onCurrentMachineChanged(int machineId)
     selectedRow               = 0;
     while (joyName) {
         int row = Models::AddEntry(joystickModel, tr(joyName).toUtf8().data(), i);
-        if (i == joystick_type[0])
+        scJoystick0->addDevice(nullptr, tr(joyName));
+        if (i == curJoystickType)
             selectedRow = row - removeRows;
 
         ++i;
@@ -159,6 +302,7 @@ SettingsInput::on_comboBoxKeyboard_currentIndexChanged(int index)
         return;
     int keyboardId = ui->comboBoxKeyboard->currentData().toInt();
     ui->pushButtonConfigureKeyboard->setEnabled(keyboard_has_config(keyboardId) > 0);
+    keyboardType = keyboardId;
 }
 
 void
@@ -168,6 +312,17 @@ SettingsInput::on_comboBoxMouse_currentIndexChanged(int index)
         return;
     int mouseId = ui->comboBoxMouse->currentData().toInt();
     ui->pushButtonConfigureMouse->setEnabled(mouse_has_config(mouseId) > 0);
+    mouseType = mouseId;
+}
+
+void
+SettingsInput::on_comboBoxTablet_currentIndexChanged(int index)
+{
+    if (index < 0)
+        return;
+    int tabletId = ui->comboBoxTablet->currentData().toInt();
+    ui->pushButtonConfigureTablet->setEnabled(tablet_has_config(tabletId) > 0);
+    tabletType = tabletId;
 }
 
 void
@@ -181,20 +336,28 @@ SettingsInput::on_comboBoxJoystick0_currentIndexChanged(int index)
 
         btn->setEnabled(joystick_get_max_joysticks(joystickId) > i);
     }
+    joystickType = joystickId;
 }
 
 void
 SettingsInput::on_pushButtonConfigureKeyboard_clicked()
 {
     int keyboardId = ui->comboBoxKeyboard->currentData().toInt();
-    DeviceConfig::ConfigureDevice(keyboard_get_device(keyboardId));
+    kbd_config_changed |= DeviceConfig::ConfigureDevice(keyboard_get_device(keyboardId));
 }
 
 void
 SettingsInput::on_pushButtonConfigureMouse_clicked()
 {
     int mouseId = ui->comboBoxMouse->currentData().toInt();
-    DeviceConfig::ConfigureDevice(mouse_get_device(mouseId));
+    mouse_config_changed |= DeviceConfig::ConfigureDevice(mouse_get_device(mouseId));
+}
+
+void
+SettingsInput::on_pushButtonConfigureTablet_clicked()
+{
+    int tabletId = ui->comboBoxTablet->currentData().toInt();
+    tablet_config_changed |= DeviceConfig::ConfigureDevice(tablet_get_device(tabletId));
 }
 
 static int

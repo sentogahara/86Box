@@ -203,6 +203,7 @@ extern int             network_type_has_config(int);
 extern const char     *network_card_get_internal_name(int);
 extern int             network_card_get_from_internal_name(char *);
 #ifdef EMU_DEVICE_H
+extern const device_t *network_card_get_from_old_internal_name(char *s);
 extern const device_t *network_card_getdevice(int);
 #endif
 
@@ -230,7 +231,7 @@ extern const device_t rtl8019as_pnp_device;
 extern const device_t de220p_device;
 extern const device_t rtl8029as_device;
 
-/* AMD PCnet*/
+/* AMD PCnet */
 extern const device_t pcnet_am79c960_device;
 extern const device_t pcnet_am79c960_eb_device;
 extern const device_t pcnet_am79c960_vlb_device;
@@ -242,17 +243,25 @@ extern const device_t pcnet_am79c973_onboard_device;
 /* Modem */
 extern const device_t modem_device;
 
-/* PLIP */
-extern const device_t lpt_plip_device;
+/* LPT */
+extern const device_t pe3_device;
 extern const device_t plip_device;
 
 /* Realtek RTL8139C+ */
 extern const device_t rtl8139c_plus_device;
 
+/* Intel 8255x */
+extern const device_t i82557_device;
+extern const device_t i82558_device;
+extern const device_t i82557b_onboard_device;
+extern const device_t i82558b_onboard_device;
+extern const device_t nec_pk_ug_x006_device;
+extern const device_t i82559c_onboard_device;
+extern const device_t i82559er_onboard_device;
+
 /* DEC Tulip */
 extern const device_t dec_tulip_device;
 extern const device_t dec_tulip_21140_device;
-extern const device_t dec_tulip_21140_vpc_device;
 extern const device_t dec_tulip_21040_device;
 
 /* WD 80x3 */
@@ -262,6 +271,9 @@ extern const device_t wd8013ebt_device;
 extern const device_t wd8003eta_device;
 extern const device_t wd8003ea_device;
 extern const device_t wd8013epa_device;
+extern const device_t ibm_ethernet_efd4_device;
+extern const device_t ibm_ethernet_efd5_device;
+extern const device_t ibm_ethernet_efe5_device;
 #endif
 
 #ifdef __cplusplus

@@ -230,7 +230,7 @@ tgui_update_irqs(tgui_t *tgui)
 static void
 tgui_remove_io(tgui_t *tgui)
 {
-    io_removehandler(0x03c0, 0x0020, tgui_in, NULL, NULL, tgui_out, NULL, NULL, tgui);
+    io_removehandler(0x03a0, 0x0040, tgui_in, NULL, NULL, tgui_out, NULL, NULL, tgui);
     if (tgui->type >= TGUI_9440) {
         io_removehandler(0x43c6, 0x0004, tgui_in, NULL, NULL, tgui_out, NULL, NULL, tgui);
         io_removehandler(0x83c6, 0x0003, tgui_in, NULL, NULL, tgui_out, NULL, NULL, tgui);
@@ -262,6 +262,8 @@ tgui_set_io(tgui_t *tgui)
 {
     tgui_remove_io(tgui);
 
+    if (!(tgui->svga.miscout & 0x01))
+        io_sethandler(0x03a0, 0x0020, tgui_in, NULL, NULL, tgui_out, NULL, NULL, tgui);
     io_sethandler(0x03c0, 0x0020, tgui_in, NULL, NULL, tgui_out, NULL, NULL, tgui);
     if (tgui->type >= TGUI_9440) {
         io_sethandler(0x43c6, 0x0004, tgui_in, NULL, NULL, tgui_out, NULL, NULL, tgui);
@@ -4029,9 +4031,8 @@ tgui_init(const device_t *info)
 {
     const char *bios_fn;
 
-    tgui_t *tgui = malloc(sizeof(tgui_t));
+    tgui_t *tgui = calloc(1, sizeof(tgui_t));
     svga_t *svga = &tgui->svga;
-    memset(tgui, 0, sizeof(tgui_t));
 
     tgui->vram_size = device_get_config_int("memory") << 20;
     tgui->vram_mask = tgui->vram_size - 1;

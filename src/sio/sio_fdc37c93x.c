@@ -775,7 +775,7 @@ fdc37c93x_fdc_handler(fdc37c93x_t *dev)
 
     dev->fdc_base = 0x0000;
 
-    if (global_enable && local_enable)
+    if (local_enable)
         dev->fdc_base = make_port(dev, 0) & 0xfff8;
 
     if (dev->fdc_base != old_base) {
@@ -785,6 +785,8 @@ fdc37c93x_fdc_handler(fdc37c93x_t *dev)
         if ((dev->fdc_base >= 0x0100) && (dev->fdc_base <= 0x0ff8))
             fdc_set_base(dev->fdc, dev->fdc_base);
     }
+
+    fdc_set_power_down(dev->fdc, !global_enable);
 }
 
 static void
@@ -1424,7 +1426,8 @@ fdc37c93x_write(uint16_t port, uint8_t val, void *priv)
                             dev->ld_regs[dev->regs[7]][dev->cur_reg] = val;
                             break;
                         case 0xf4:
-                            dev->ld_regs[dev->regs[7]][dev->cur_reg] = val & 0x83;
+                            dev->ld_regs[dev->regs[7]][dev->cur_reg] =
+                                (dev->ld_regs[dev->regs[7]][dev->cur_reg] & 0x73) | (val & 0x80);
                             break;
                     }
                     break;
@@ -1736,6 +1739,7 @@ fdc37c93x_reset(void *priv)
     dev->ld_regs[0x06][0x63] = (dev->has_nvr) ? 0x70 : 0x00;
     dev->ld_regs[0x06][0xf0] = 0x00;
     dev->ld_regs[0x06][0xf4] = 0x03;
+    dev->ld_regs[0x06][0xf6] = 0x01;
 
     /* Logical device 7: Keyboard */
     dev->ld_regs[0x07][0x30] = 0x00;
@@ -1797,10 +1801,12 @@ fdc37c93x_reset(void *priv)
         nvr_bank_set(0, 0, dev->nvr);
         nvr_bank_set(1, 0xff, dev->nvr);
 
-        nvr_lock_set(0x80, 0x20, 0, dev->nvr);
-        nvr_lock_set(0xa0, 0x20, 0, dev->nvr);
-        nvr_lock_set(0xc0, 0x20, 0, dev->nvr);
-        nvr_lock_set(0xe0, 0x20, 0, dev->nvr);
+        if (!dump_missing) {
+            nvr_lock_set(0x80, 0x20, 0, dev->nvr);
+            nvr_lock_set(0xa0, 0x20, 0, dev->nvr);
+            nvr_lock_set(0xc0, 0x20, 0, dev->nvr);
+            nvr_lock_set(0xe0, 0x20, 0, dev->nvr);
+        }
     }
 
     fdc37c93x_kbc_handler(dev);
@@ -1812,7 +1818,8 @@ fdc37c93x_reset(void *priv)
     memset(dev->gpio_pulldn, 0xff, 8);
 
     /* Acer V62X requires bit 0 to be clear to not be stuck in "clear password" mode. */
-    if ((machines[machine].init == machine_at_vectra54_init) || (machines[machine].init == machine_at_vectra500mt_init)) {
+    if ((machines[machine].init == machine_at_vectra54_init) ||
+        (machines[machine].init == machine_at_vectra500mt_init)) {
         dev->gpio_pulldn[1] = 0x40;
 
         /*
@@ -1874,13 +1881,14 @@ static void *
 fdc37c93x_init(const device_t *info)
 {
     fdc37c93x_t *dev = (fdc37c93x_t *) calloc(1, sizeof(fdc37c93x_t));
+    int inst = device_get_instance();
 
     dev->fdc = device_add(&fdc_at_smc_device);
 
     dev->uart[0]   = device_add_inst(&ns16550_device, 1);
     dev->uart[1]   = device_add_inst(&ns16550_device, 2);
 
-    dev->lpt       = device_add_inst(&lpt_port_device, 1);
+    dev->lpt       = device_add_inst(&lpt_port_device, inst ? 2 : 1);
 
     dev->chip_id   = info->local & FDC37C93X_CHIP_ID;
     dev->kbc_type  = info->local & FDC37XXXX_KBC;

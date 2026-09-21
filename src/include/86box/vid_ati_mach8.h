@@ -31,10 +31,13 @@ typedef struct mach_t {
     mem_mapping_t mmio_linear_mapping;
     mem_mapping_t banked_mapping;
 
+    void *log;
+
     int mca_bus;
     int pci_bus;
     int vlb_bus;
     int has_bios;
+    int bus_width_8bit;
 
     uint8_t regs[256];
     uint8_t pci_regs[256];
@@ -80,10 +83,7 @@ typedef struct mach_t {
     uint8_t overscan_b_col_24;
     uint8_t overscan_g_col_24;
     uint8_t overscan_r_col_24;
-    uint16_t fifo_test_data[17];
-    uint8_t old_on1;
-    uint8_t old_on2;
-    int     crt_resolution;
+    uint16_t fifo_test_data[16];
 
     struct {
         uint8_t  line_idx;
@@ -93,6 +93,7 @@ typedef struct mach_t {
         uint8_t  pix_trans[2];
         uint8_t  alu_bg_fn;
         uint8_t  alu_fg_fn;
+        uint8_t  dp_compat;
         uint16_t eeprom_control;
         uint16_t clip_left;
         uint16_t clip_right;
@@ -114,6 +115,10 @@ typedef struct mach_t {
         uint16_t dst_pitch;
         uint16_t dest_cmp_fn;
         uint16_t dp_config;
+        uint8_t  src_reload;
+        int      src_cur_x;
+        int      src_cur_y;
+        int      src_cur_sx;
         uint16_t ext_ge_config;
         uint16_t crt_offset_lo;
         uint16_t crt_offset_hi;
@@ -146,6 +151,7 @@ typedef struct mach_t {
         int16_t  dx_start;
         int16_t  dy_start;
         int16_t  cy;
+        int16_t  sx_first_row_start;
         int16_t  sx_start;
         int16_t  sx_end;
         int16_t  sx;
@@ -164,6 +170,7 @@ typedef struct mach_t {
         int      stepx;
         int      stepy;
         int      src_stepx;
+        int      odd_width;
         uint8_t  mono_pattern_normal[16];
         uint8_t  color_pattern[32];
         uint16_t color_pattern_hicol[8];
@@ -182,6 +189,8 @@ typedef struct mach_t {
 
     atomic_int force_busy;
     atomic_int fifo_test_idx;
+
+    uint16_t ctl;
 } mach_t;
 
 #endif /*VIDEO_ATI_MACH8_H*/

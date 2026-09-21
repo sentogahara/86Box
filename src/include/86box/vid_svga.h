@@ -30,6 +30,7 @@
 #    define FLAG_NO_SHIFT3    1024 /* Needed for Bochs VBE. */
 #    define FLAG_PRECISETIME  2048 /* Needed for Copper demo if on dynarec. */
 #    define FLAG_PANNING_ATI  4096
+#    define FLAG_EXT_AR 8192
 struct monitor_t;
 
 typedef struct hwcursor_t {
@@ -95,6 +96,7 @@ typedef struct svga_t {
     int hdisp;
     int hdisp_old;
     int htotal;
+    int h_total;
     int hdisp_time;
     int rowoffset;
     int dispon;
@@ -120,7 +122,6 @@ typedef struct svga_t {
     int x_add;
     int y_add;
     int pan;
-    int vram_display_mask;
     int vidclock;
     int dots_per_clock;
     int hwcursor_on;
@@ -155,6 +156,7 @@ typedef struct svga_t {
       For the example memory map, decode_mask would be 4MB-1 (4MB address space), vram_max would be 2MB
       (present video memory only responds to first 2MB), vram_mask would be 1MB-1 (video memory wraps at 1MB)
     */
+    uint32_t  vram_display_mask;
     uint32_t  decode_mask;
     uint32_t  vram_max;
     uint32_t  vram_mask;
@@ -244,6 +246,9 @@ typedef struct svga_t {
        when the monitor is connected to the Display Adapter. */
     int cable_connected;
 
+    uint8_t genena;
+    uint8_t genvs;
+
     uint8_t  crtc[256];
     uint8_t  gdcreg[256];
     uint8_t  attrregs[32];
@@ -268,7 +273,6 @@ typedef struct svga_t {
     uint8_t dac_mask;
     uint8_t dac_status;
     uint8_t dpms;
-    uint8_t dpms_ui;
     uint8_t color_2bpp;
     uint8_t ksc5601_sbyte_mask;
     uint8_t ksc5601_udc_area_msb[2];
@@ -351,11 +355,11 @@ extern void     ibm8514_accel_start(int count, int cpu_input, uint32_t mix_dat, 
 extern void     ati8514_out(uint16_t addr, uint8_t val, void *priv);
 extern uint8_t  ati8514_in(uint16_t addr, void *priv);
 extern void     ati8514_recalctimings(svga_t *svga);
-extern uint8_t  ati8514_mca_read(int port, void *priv);
+extern uint8_t  ati8514_mca_read(const uint16_t port, void *priv);
 extern uint8_t  ati8514_bios_rom_readb(uint32_t addr, void *priv);
 extern uint16_t ati8514_bios_rom_readw(uint32_t addr, void *priv);
 extern uint32_t ati8514_bios_rom_readl(uint32_t addr, void *priv);
-extern void     ati8514_mca_write(int port, uint8_t val, void *priv);
+extern void     ati8514_mca_write(const uint16_t port, uint8_t val, void *priv);
 extern void     ati8514_pos_write(uint16_t port, uint8_t val, void *priv);
 extern void     ati8514_init(svga_t *svga, void *ext8514, void *dev8514);
 
@@ -519,6 +523,7 @@ extern const device_t gendac_ramdac_device;
 extern const device_t ibm_rgb528_ramdac_device;
 extern const device_t ics1494m_540_device;
 extern const device_t ics1494m_540_radius_ht209_device;
+extern const device_t ics2494an_304_device;
 extern const device_t ics2494an_305_device;
 extern const device_t ics2494an_324_device;
 extern const device_t ati18810_28800_device;

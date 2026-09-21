@@ -65,6 +65,12 @@
 #define FLAG_CACHE         0x02
 #define FLAG_PS2           0x04
 
+/* Polls (100 us) before the first auxiliary byte can arrive after the interface
+   is enabled: the device must see its clock released and then clock 11 bits in
+   at 10-16.7 kHz, so a pending byte (e.g. its BAT) cannot land in the output
+   buffer before a command the host issues right after the enabling one. */
+#define AUX_ENABLE_DELAY   10
+
 enum {
     STATE_RESET = 0,       /* KBC reset state, only accepts command AA. */
     STATE_KBC_DELAY_OUT,   /* KBC is sending one single byte. */
@@ -104,6 +110,7 @@ typedef struct atkbc_t {
     uint8_t pending;
     uint8_t irq_state;
     uint8_t do_irq;
+    uint8_t aux_delay;
     uint8_t is_asic;
     uint8_t is_green;
     uint8_t kblock_switch;
@@ -240,7 +247,8 @@ kbc_translate(atkbc_t *dev, uint8_t val)
 {
     int      xt_mode   = (dev->mem[0x20] & 0x20) && !(dev->misc_flags & FLAG_PS2);
     /* The IBM AT keyboard controller firmware does not apply translation in XT mode. */
-    int      translate = !xt_mode && ((dev->mem[0x20] & 0x40) || (dev->is_type2));
+    /* PS/2 (type 2) keyboard controllers never translate, the XLAT bit is ignored. */
+    int      translate = !xt_mode && !(dev->is_type2) && (dev->mem[0x20] & 0x40);
     uint8_t  kbc_ven   = dev->flags & KBC_VEN_MASK;
     int      ret       = - 1;
 
@@ -597,6 +605,10 @@ kbc_scan_kbd_ps2(atkbc_t *dev)
 static int
 kbc_scan_aux_ps2(atkbc_t *dev)
 {
+    /* The device cannot have clocked a byte in yet if its interface was only just enabled. */
+    if (dev->aux_delay > 0)
+        return 0;
+
     if ((dev->ports[1] != NULL) && (dev->ports[1]->out_new != -1)) {
         kbc_at_log("ATkbc: %02X coming from channel 2\n", dev->ports[1]->out_new & 0xff);
         kbc_send_to_ob(dev, dev->ports[1]->out_new, 2, 0x00);
@@ -612,6 +624,13 @@ static void
 kbc_at_poll_ps2(atkbc_t *dev)
 {
     kbc_do_irq(dev);
+
+    /* Keep the auxiliary transmit delay armed while the interface is disabled
+       (clock held low); count it down once the interface is enabled. */
+    if (dev->mem[0x20] & 0x20)
+        dev->aux_delay = AUX_ENABLE_DELAY;
+    else if (dev->aux_delay > 0)
+        dev->aux_delay--;
 
     switch (dev->state) {
         case STATE_RESET:
@@ -2262,7 +2281,7 @@ read_p1(atkbc_t *dev)
     if ((dev != NULL) && (kbc_ven == KBC_VEN_TOSHIBA))
         ret             = machine_get_p1(0xff);
     else
-        ret             = machine_get_p1(dev->p1) | (dev->p1 & 0x03);
+        ret             = machine_get_p1(dev->p1 & 0xfc) | (dev->p1 & 0x03);
 
     dev->p1 = ((dev->p1 + 1) & 0x03) | (dev->p1 & 0xfc);
 
@@ -2280,8 +2299,10 @@ kbc_at_process_cmd(void *priv)
 
     if (dev->status & STAT_CD) {
         /* Controller command. */
-        dev->wantdata  = 0;
-        dev->state     = STATE_MAIN_IBF;
+        uint8_t cur_state = dev->state;
+
+        dev->wantdata     = 0;
+        dev->state        = STATE_MAIN_IBF;
 
         /* Clear the keyboard controller queue. */
         kbc_at_queue_reset(dev);
@@ -2360,7 +2381,7 @@ kbc_at_process_cmd(void *priv)
                 kbc_at_log("ATkbc: self-test\n");
 
                 if (machine_has_flags_ex(MACHINE_PS2_KBC)) {
-                    if (dev->state != STATE_RESET) {
+                    if (cur_state != STATE_RESET) {
                         kbc_at_log("ATkbc: self-test reinitialization\n");
                         dev->p1 |= 0xff;
                         write_p2(dev, 0x4b);
@@ -2380,7 +2401,7 @@ kbc_at_process_cmd(void *priv)
                     dev->mem[0x29] = 0x0b;
                     dev->mem[0x30] = 0x0b;
                 } else {
-                    if (dev->state != STATE_RESET) {
+                    if (cur_state != STATE_RESET) {
                         kbc_at_log("ATkbc: self-test reinitialization\n");
                         dev->p1 |= 0xff;
                         write_p2(dev, 0xcf);
@@ -2515,6 +2536,10 @@ kbc_at_process_cmd(void *priv)
 
             case 0xf0 ... 0xff: /* pulse P2 */
                 kbc_at_log("ATkbc: pulse %01X\n", dev->ib & 0x0f);
+                /* The 8042 sets the system flag when it receives the 0xFE command,
+                   which pulses the CPU reset line. */
+                if (dev->ib == 0xfe)
+                    dev->status |= STAT_SYSFLAG;
                 pulse_output(dev, dev->ib & 0x0f);
                 break;
         }
@@ -2772,14 +2797,24 @@ kbc_at_reset(void *priv)
     dev->command_phase = 0;
 
     /* Video Type is now handled in the machine P1 handler. */
-    dev->p1 = 0xf0;
+    dev->p1 = 0xff;
     kbc_at_log("ATkbc: P1 = %02x\n", dev->p1);
 
     /* Disabled both the keyboard and auxiliary ports. */
     set_enable_kbd(dev, 0);
     set_enable_aux(dev, 0);
+    dev->aux_delay = AUX_ENABLE_DELAY;
 
     kbc_at_queue_reset(dev);
+
+    /* Discard whatever the attached devices had queued before the reset: those
+       keystrokes would otherwise be delivered to the guest afterwards. The devices
+       themselves are left alone, so that their scan enable state and self test are
+       not disturbed. */
+    for (uint8_t i = 0; i < 2; i++) {
+        if ((dev->ports[i] != NULL) && (dev->ports[i]->priv != NULL))
+            kbc_at_dev_discard((atkbc_dev_t *) dev->ports[i]->priv);
+    }
 
     dev->sc_or = 0;
 

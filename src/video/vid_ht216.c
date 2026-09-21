@@ -486,13 +486,17 @@ ht216_out(uint16_t addr, uint8_t val, void *priv)
             break;
 
         case 0x46e8:
-            io_removehandler(0x03c0, 0x0020, ht216_in, NULL, NULL, ht216_out, NULL, NULL, ht216);
+            io_removehandler(0x03a0, 0x0040, ht216_in, NULL, NULL, ht216_out, NULL, NULL, ht216);
             mem_mapping_disable(&svga->mapping);
             mem_mapping_disable(&ht216->linear_mapping);
-            if (val & 0x08) {
+            if (!(val & 0x10)) {
+                if (!(svga->miscout & 0x01))
+                    io_sethandler(0x03a0, 0x0020, ht216_in, NULL, NULL, ht216_out, NULL, NULL, ht216);
                 io_sethandler(0x03c0, 0x0020, ht216_in, NULL, NULL, ht216_out, NULL, NULL, ht216);
-                mem_mapping_enable(&svga->mapping);
-                ht216_remap(ht216);
+                if (val & 0x08) {
+                    mem_mapping_enable(&svga->mapping);
+                    ht216_remap(ht216);
+                }
             }
             break;
 
@@ -1593,7 +1597,7 @@ ht216_read_linear(uint32_t addr, void *priv)
 }
 
 static uint8_t
-radius_mca_read(int port, void *priv)
+radius_mca_read(const uint16_t port, void *priv)
 {
     const ht216_t *ht216 = (ht216_t *) priv;
 
@@ -1603,7 +1607,7 @@ radius_mca_read(int port, void *priv)
 }
 
 static void
-radius_mca_write(int port, uint8_t val, void *priv)
+radius_mca_write(const uint16_t port, uint8_t val, void *priv)
 {
     ht216_t *ht216 = (ht216_t *) priv;
 
@@ -1626,13 +1630,12 @@ radius_mca_feedb(UNUSED(void *priv))
 void *
 ht216_init(const device_t *info, uint32_t mem_size, int has_rom)
 {
-    ht216_t *ht216 = malloc(sizeof(ht216_t));
+    ht216_t *ht216 = calloc(1, sizeof(ht216_t));
     svga_t  *svga;
     const char *bios_ver = NULL;
     const char *fn = NULL;
     const char *fn2 = NULL;
 
-    memset(ht216, 0, sizeof(ht216_t));
     svga = &ht216->svga;
 
     ht216->id = info->local;
@@ -1714,7 +1717,7 @@ ht216_init(const device_t *info, uint32_t mem_size, int has_rom)
     }
 
     svga->bpp     = 8;
-    svga->miscout = 1;
+    svga->miscout = 0;
     svga->hwcursor.cur_ysize = 32;
     ht216->vram_mask         = mem_size - 1;
     svga->decode_mask        = mem_size - 1;
@@ -1744,7 +1747,7 @@ ht216_init(const device_t *info, uint32_t mem_size, int has_rom)
     mem_mapping_set_p(&svga->mapping, ht216);
     mem_mapping_disable(&ht216->linear_mapping);
 
-    io_sethandler(0x03c0, 0x0020, ht216_in, NULL, NULL, ht216_out, NULL, NULL, ht216);
+    io_sethandler(0x03a0, 0x0040, ht216_in, NULL, NULL, ht216_out, NULL, NULL, ht216);
     io_sethandler(0x46e8, 0x0001, ht216_in, NULL, NULL, ht216_out, NULL, NULL, ht216);
 
     if (ht216->id == 0x7861)
@@ -1973,6 +1976,7 @@ const device_t ht216_32_pb410a_device = {
     .available     = NULL,
     .speed_changed = ht216_speed_changed,
     .force_redraw  = ht216_force_redraw,
+    .machine       = "Packard Bell PB410A",
     .config        = NULL
 };
 

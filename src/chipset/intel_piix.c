@@ -68,6 +68,7 @@ typedef struct _piix_ {
     uint16_t       func0_id;
     uint16_t       nvr_io_base;
     uint16_t       acpi_io_base;
+    uint16_t       irq_state;
     double         fast_off_period;
     sff8038i_t    *bm[2];
     smbus_piix4_t *smbus;
@@ -240,7 +241,7 @@ kbc_alias_update_io_mapping(piix_t *dev)
 static void
 smbus_update_io_mapping(piix_t *dev)
 {
-    smbus_piix4_remap(dev->smbus, ((uint16_t) (dev->regs[3][0x91] << 8)) | (dev->regs[3][0x90] & 0xf0), (dev->regs[3][PCI_REG_COMMAND] & PCI_COMMAND_IO) && (dev->regs[3][0xd2] & 0x01));
+    smbus_piix4_remap(dev->smbus, ((uint16_t) (dev->regs[3][0x91] << 8)) | (dev->regs[3][0x90] & 0xf0), (dev->regs[3][PCI_REG_COMMAND] & PCI_COMMAND_IO));
 }
 
 static void
@@ -274,7 +275,7 @@ nvr_update_io_mapping(piix_t *dev)
 }
 
 static void
-piix_trap_io(UNUSED(int size), UNUSED(uint16_t addr), UNUSED(uint8_t write), UNUSED(uint8_t val), void *priv)
+piix_trap_io(UNUSED(const uint16_t size), UNUSED(const uint16_t port), UNUSED(const uint8_t write), UNUSED(const uint8_t val), void *priv)
 {
     piix_io_trap_t *trap = (piix_io_trap_t *) priv;
 
@@ -285,13 +286,13 @@ piix_trap_io(UNUSED(int size), UNUSED(uint16_t addr), UNUSED(uint8_t write), UNU
 }
 
 static void
-piix_trap_io_ide(int size, uint16_t addr, uint8_t write, uint8_t val, void *priv)
+piix_trap_io_ide(uint16_t size, const uint16_t port, const uint8_t write, const uint8_t val, void *priv)
 {
     const piix_io_trap_t *trap = (piix_io_trap_t *) priv;
 
     /* IDE traps are per drive, not per channel. */
     if (ide_drives[trap->dev_id]->selected)
-        piix_trap_io(size, addr, write, val, priv);
+        piix_trap_io(size, port, write, val, priv);
 }
 
 static void
@@ -463,6 +464,55 @@ piix_trap_update(void *priv)
     /* Programmable memory trap not implemented. */
 }
 
+/*
+   EXTSMI#: asserted by board logic (e.g. a Super I/O GPIO pin).  A falling edge
+   latches the EXTSMI# status bit and, if SMI# is gated on, asserts SMI#.  Per the
+   82371SB datasheet the SMIREQ bits are set independently of CSMIGATE, so a
+   pending event fires as soon as software sets that gate.
+ */
+static piix_t *piix_ext = NULL;
+
+static void
+piix_irq(uint16_t num, int set, void *priv)
+{
+    piix_t        *dev    = (piix_t *) priv;
+    uint8_t       *fregs  = dev->regs[0];
+    const uint16_t rising = num & ~dev->irq_state;
+    uint8_t        status;
+
+    if (!set) {
+        dev->irq_state &= ~num;
+        return;
+    }
+
+    dev->irq_state |= num;
+    /* SMIEN/SMIREQ bits 0-4 correspond to IRQ1, IRQ3, IRQ4, IRQ8 and IRQ12. */
+    status = ((rising >> 1) & 0x01) | ((rising >> 2) & 0x06) |
+             ((rising >> 5) & 0x08) | ((rising >> 8) & 0x10);
+    status &= fregs[0xa2];
+    fregs[0xaa] |= status;
+    if (status && (fregs[0xa0] & 0x01))
+        smi_raise();
+}
+
+void
+piix_extsmi_raise(void)
+{
+    uint8_t *fregs;
+
+    if (piix_ext == NULL)
+        return;
+
+    fregs = (uint8_t *) piix_ext->regs[0];
+
+    /* SMIREQ (AAh) bit 6 = EXTSMI# SMI status. */
+    fregs[0xaa] |= 0x40;
+
+    /* SMICNTL (A0h) bit 0 = CSMIGATE. */
+    if (fregs[0xa0] & 0x01)
+        smi_raise();
+}
+
 static void
 piix_write(int func, int addr, UNUSED(int len), uint8_t val, void *priv)
 {
@@ -474,8 +524,9 @@ piix_write(int func, int addr, UNUSED(int len), uint8_t val, void *priv)
     if ((dev->type == 4) && (func == 1) && (addr == 0xff))
         func = 2;
 
-    if ((func == 1) || (addr == 0xf8) || (addr == 0xf9))
+    if ((func == 1) || (addr == 0xf8) || (addr == 0xf9)) {
         piix_log("[W] %02X:%02X = %02X\n", func, addr, val);
+    }
 
     /* Return on unsupported function. */
     if (dev->max_func > 0) {
@@ -674,8 +725,12 @@ piix_write(int func, int addr, UNUSED(int len), uint8_t val, void *priv)
                 break;
             case 0xa0:
                 if (dev->type < 4) {
+                    const uint8_t old = fregs[addr];
+
                     fregs[addr] = val & 0x1f;
                     apm_set_do_smi(dev->apm, !!(val & 0x01) && !!(fregs[0xa2] & 0x80));
+                    if ((val & 0x01) && !(old & 0x01) && fregs[0xaa])
+                        smi_raise();
                     switch ((val & 0x18) >> 3) {
                         case 0x00:
                             dev->fast_off_period = PCICLK * 32768.0 * 60000.0;
@@ -1292,8 +1347,6 @@ piix_reset_hard(piix_t *dev)
     fregs[0x69]                                           = 0x02;
     if ((dev->type == 1) && (dev->rev != 2))
         fregs[0x6a] = 0x04;
-    else if (dev->type == 3)
-        fregs[0x6a] = 0x10;
     fregs[0x70] = (dev->type < 4) ? 0x80 : 0x00;
     fregs[0x71] = (dev->type < 3) ? 0x80 : 0x00;
     if (dev->type <= 4) {
@@ -1381,8 +1434,10 @@ piix_reset_hard(piix_t *dev)
             fregs[0x6a] = (dev->type == 3) ? 0x01 : 0x00;
             fregs[0xc1] = 0x20;
             fregs[0xff] = (dev->type > 3) ? 0x10 : 0x00;
-        } else
-        dev->max_func = 2; /* It starts with USB disabled, then enables it. */
+        }
+        /* PIIX3 starts with USB disabled, then enables it. */
+        if (dev->type > 3)
+            dev->max_func = 2;
     }
 
     /* Function 3: Power Management */
@@ -1444,12 +1499,14 @@ piix_fast_off_count(void *priv)
 static void
 piix_reset(void *priv)
 {
-    const piix_t *dev = (piix_t *) priv;
+    piix_t *dev = (piix_t *) priv;
 
     if (dev->type > 3) {
         piix_write(3, 0x04, 1, 0x00, priv);
         piix_write(3, 0x5b, 1, 0x00, priv);
     } else {
+        dev->irq_state    = 0;
+        dev->regs[0][0xaa] = dev->regs[0][0xab] = 0;
         piix_write(0, 0xa0, 1, 0x08, priv);
         piix_write(0, 0xa2, 1, 0x00, priv);
         piix_write(0, 0xa4, 1, 0x00, priv);
@@ -1497,6 +1554,9 @@ piix_reset(void *priv)
             piix_write(2, 0x21, 1, 0x00, priv);
             piix_write(2, 0x22, 1, 0x00, priv);
             piix_write(2, 0x23, 1, 0x00, priv);
+
+            piix_write(2, 0xc0, 1, 0x00, priv);
+            piix_write(2, 0xc1, 1, 0x20, priv);
         }
     }
 
@@ -1524,6 +1584,11 @@ piix_close(void *priv)
 {
     piix_t *dev = (piix_t *) priv;
 
+    if (dev->type < 4)
+        pic_set_irq_callback(NULL, NULL);
+    if (piix_ext == dev)
+        piix_ext = NULL;
+
     for (int i = 0; i < (sizeof(dev->io_traps) / sizeof(dev->io_traps[0])); i++)
         io_trap_remove(dev->io_traps[i].trap);
 
@@ -1549,7 +1614,11 @@ piix_init(const device_t *info)
 {
     piix_t *dev = (piix_t *) calloc(1, sizeof(piix_t));
 
+    piix_ext = dev;
+    
     dev->type = info->local & 0x0f;
+    if (dev->type < 4)
+        pic_set_irq_callback(piix_irq, dev);
     /* If (dev->type == 4) and (dev->rev & 0x08), then this is PIIX4E. */
     dev->rev        = (info->local >> 4) & 0x0f;
     dev->func_shift = (info->local >> 8) & 0x0f;

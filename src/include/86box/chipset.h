@@ -28,6 +28,9 @@ extern const device_t ali1435_device;
 extern const device_t ali1489_device;
 extern const device_t ali1531_device;
 extern const device_t ali1541_device;
+
+#define ALI1543_SIO_370 0x10000ULL
+
 extern const device_t ali1543_device;
 extern const device_t ali1543c_device;
 extern const device_t ali1621_device;
@@ -112,6 +115,7 @@ extern const device_t piix_device;
 extern const device_t piix_no_mirq_device;
 extern const device_t piix_old_device;
 extern const device_t piix_rev02_device;
+extern void           piix_extsmi_raise(void);
 extern const device_t piix3_device;
 extern const device_t piix3_ioapic_device;
 extern const device_t piix4_device;
@@ -148,6 +152,8 @@ extern const device_t opti895_device;
 
 extern const device_t opti5x7_device;
 extern const device_t opti5x7_pci_device;
+extern const device_t opti55x_device;
+extern const device_t opti55x_noide_device;
 
 /* Philips */
 extern const device_t philips_device;
@@ -171,6 +177,7 @@ extern const device_t sis_5511_device;
 extern const device_t sis_5571_device;
 extern const device_t sis_5581_device;
 extern const device_t sis_5591_1997_device;
+extern const device_t sis_530_device;
 extern const device_t sis_5591_device;
 extern const device_t sis_5600_1997_device;
 extern const device_t sis_5600_device;
@@ -193,6 +200,9 @@ extern const device_t umc_8886bf_device;
 extern const device_t umc_8890_device;
 extern const device_t umc_hb4_device;
 
+/* Utron */
+extern const device_t ut85c50x_device;
+
 /* VIA */
 extern const device_t via_vt82c49x_device;
 extern const device_t via_vt82c49x_pci_device;
@@ -205,6 +215,9 @@ extern const device_t via_apro_device;
 extern const device_t via_apro133_device;
 extern const device_t via_apro133a_device;
 extern const device_t via_vt8601_device;
+
+#define VIA_PIPC_NO_KBC 0x0000000100000000ULL
+
 extern const device_t via_vt82c586b_device;
 extern const device_t via_vt82c596a_device;
 extern const device_t via_vt82c596b_device;
@@ -235,6 +248,8 @@ extern const device_t phoenix_486_jumper_device;
 extern const device_t phoenix_486_jumper_pci_device;
 extern const device_t phoenix_486_jumper_pci_pb600_device;
 extern const device_t phoenix_486_jumper_monsoon_device;
+extern const device_t phoenix_486_jumper_pb400_device;
+extern const device_t phoenix_486_jumper_pb430_device;
 
 extern const device_t ast_readout_device;
 extern const device_t ast_nvr_device;

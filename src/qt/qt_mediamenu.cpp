@@ -16,7 +16,7 @@
  *          Copyright 2021-2022 Cacodemon345
  *          Copyright 2021-2022 Teemu Korhonen
  */
-#include "qt_progsettings.hpp"
+#include "qt_preferences.hpp"
 #include "qt_machinestatus.hpp"
 
 #include <QMenu>
@@ -167,12 +167,16 @@ MediaMenu::refresh(QMenu *parentMenu)
 
     cdromMenus.clear();
     MachineStatus::iterateCDROM([this, parentMenu](int i) {
-        auto *menu   = parentMenu->addMenu("");
+        auto *menu        = parentMenu->addMenu("");
+        int   t           = cdrom[i].type;
+        QIcon img_icon    = cdrom_is_dvd(t) ? QIcon(":/settings/qt/icons/dvdrom_image.ico")  : QIcon(":/settings/qt/icons/cdrom_image.ico");
+        QIcon folder_icon = cdrom_is_dvd(t) ? QIcon(":/settings/qt/icons/dvdrom_folder.ico") : QIcon(":/settings/qt/icons/cdrom_folder.ico");
+        QIcon host_icon   = cdrom_is_dvd(t) ? QIcon(":/settings/qt/icons/dvdrom_host.ico")   : QIcon(":/settings/qt/icons/cdrom_host.ico");
         cdromMutePos = menu->children().count();
         menu->addAction(QIcon(":/settings/qt/icons/cdrom_mute.ico"), tr("&Mute"), [this, i]() { cdromMute(i); })->setCheckable(true);
         menu->addSeparator();
-        menu->addAction(getIconWithIndicator(QIcon(":/settings/qt/icons/cdrom_image.ico"), pixmap_size, QIcon::Normal, Browse), tr("&Image…"), [this, i]() { cdromMount(i, 0, nullptr); })->setCheckable(false);
-        menu->addAction(getIconWithIndicator(QIcon(":/settings/qt/icons/cdrom_folder.ico"), pixmap_size, QIcon::Normal, Browse), tr("&Folder…"), [this, i]() { cdromMount(i, 1, nullptr); })->setCheckable(false);
+        menu->addAction(getIconWithIndicator(img_icon, pixmap_size, QIcon::Normal, Browse), tr("&Image…"), [this, i]() { cdromMount(i, 0, nullptr); })->setCheckable(false);
+        menu->addAction(getIconWithIndicator(folder_icon, pixmap_size, QIcon::Normal, Browse), tr("&Folder…"), [this, i]() { cdromMount(i, 1, nullptr); })->setCheckable(false);
         menu->addSeparator();
         for (int slot = 0; slot < MAX_PREV_IMAGES; slot++) {
             cdromImageHistoryPos[slot] = menu->children().count();
@@ -189,7 +193,7 @@ MediaMenu::refresh(QMenu *parentMenu)
                 auto drive = QString("%1:\\").arg(letter);
                 /* Check if the letter is a CD-ROM drive. */
                 if (GetDriveTypeA(drive.toUtf8().constData()) == DRIVE_CDROM)
-                    menu->addAction(QIcon(":/settings/qt/icons/cdrom_host.ico"), tr("&Host CD/DVD Drive (%1)").arg(QString(letter).append(':')), [this, i, letter] { cdromMount(i, 2, QString(R"(\\.\%1:)").arg(letter)); })->setCheckable(false);
+                    menu->addAction(host_icon, tr("&Host CD/DVD Drive (%1)").arg(QString(letter).append(':')), [this, i, letter] { cdromMount(i, 2, QString(R"(\\.\%1:)").arg(letter)); })->setCheckable(false);
             }
             drives >>= 1;
             letterIdx++;
@@ -208,7 +212,7 @@ MediaMenu::refresh(QMenu *parentMenu)
                     auto devName = it.fileName();
                     auto devPath = QString("/dev/%1").arg(devName);
                     if (QFile::exists(devPath))
-                        menu->addAction(QIcon(":/settings/qt/icons/cdrom_host.ico"), tr("&Host CD/DVD Drive (%1)").arg(devName), [this, i, devPath] { cdromMount(i, 2, devPath); })->setCheckable(false);
+                        menu->addAction(host_icon, tr("&Host CD/DVD Drive (%1)").arg(devName), [this, i, devPath] { cdromMount(i, 2, devPath); })->setCheckable(false);
                 }
                 file.close();
             }
@@ -225,7 +229,7 @@ MediaMenu::refresh(QMenu *parentMenu)
     MachineStatus::iterateRDisk([this, parentMenu](int i) {
         auto *menu     = parentMenu->addMenu("");
         int   t        = rdisk_drives[i].type;
-        QIcon img_icon = ((t == RDISK_TYPE_ZIP_100) || (t == RDISK_TYPE_ZIP_250)) ? QIcon(":/settings/qt/icons/zip_image.ico") : QIcon(":/settings/qt/icons/rdisk_image.ico");
+        QIcon img_icon = ((t == RDISK_TYPE_ZIP_100) || (t == RDISK_TYPE_ZIP_250)) ? QIcon(":/settings/qt/icons/zip_image.ico") : ((t == RDISK_TYPE_JAZ_1GB) || (t == RDISK_TYPE_JAZ_2GB)) ? QIcon(":/settings/qt/icons/jaz_image.ico") : QIcon(":/settings/qt/icons/rdisk_image.ico");
         menu->addAction(getIconWithIndicator(img_icon, pixmap_size, QIcon::Normal, New), tr("&New image…"), [this, i]() { rdiskNewImage(i); });
         menu->addSeparator();
         menu->addAction(getIconWithIndicator(img_icon, pixmap_size, QIcon::Normal, Browse), tr("&Existing image…"), [this, i]() { rdiskSelectImage(i, false); });
@@ -266,6 +270,8 @@ MediaMenu::refresh(QMenu *parentMenu)
     MachineStatus::iterateTape([this, parentMenu](int i) {
         auto *menu     = parentMenu->addMenu("");
         QIcon img_icon = QIcon(":/settings/qt/icons/tape_image.ico");
+        menu->addAction(getIconWithIndicator(img_icon, pixmap_size, QIcon::Normal, New), tr("&New image…"), [this, i]() { tapeNewImage(i); });
+        menu->addSeparator();
         menu->addAction(getIconWithIndicator(img_icon, pixmap_size, QIcon::Normal, Browse), tr("&Existing image…"), [this, i]() { tapeSelectImage(i, false); });
         menu->addAction(getIconWithIndicator(img_icon, pixmap_size, QIcon::Normal, WriteProtectedBrowse), tr("Existing image (&Write-protected)…"), [this, i]() { tapeSelectImage(i, true); });
         menu->addSeparator();
@@ -648,12 +654,17 @@ MediaMenu::cdromMount(int i, int dir, const QString &arg)
 
     if (dir > 1)
         filename = QString::asprintf(R"(ioctl://%s)", arg.toUtf8().data());
-    else if (dir == 1)
-        filename = QFileDialog::getExistingDirectory(parentWidget, QString(), getMediaOpenDirectory());
+    else if (dir == 1) {
+        QFileDialog::Options options = QFileDialog::ShowDirsOnly;
+#ifdef Q_OS_LINUX
+        options |= QFileDialog::DontUseNativeDialog;
+#endif
+        filename = QFileDialog::getExistingDirectory(parentWidget, QString(), getMediaOpenDirectory(), options);
+    }
     else {
         filename = QFileDialog::getOpenFileName(parentWidget, QString(),
                                                 getMediaOpenDirectory(),
-                                                tr("CD-ROM images") % util::DlgFilter({ "iso", "cue", "mds", "mdx" }) % tr("All files") % util::DlgFilter({ "*" }, true));
+                                                tr("CD-ROM images") % util::DlgFilter({ "iso", "cue", "toc", "ccd", "mds", "mdx", "aaruf", "aaruformat", "aif", "chd" }) % tr("All files") % util::DlgFilter({ "*" }, true));
     }
 
     if (filename.isEmpty())
@@ -760,14 +771,18 @@ MediaMenu::updateImageHistory(int index, int slot, ui::MediaType type)
                 imageHistoryUpdatePos->setIcon(menu_icon);
             }
             break;
-        case ui::MediaType::Optical:
+        case ui::MediaType::Optical: {
             if (!cdromMenus.contains(index))
                 return;
+            int   t           = cdrom[index].type;
+            QIcon img_icon    = cdrom_is_dvd(t) ? QIcon(":/settings/qt/icons/dvdrom_image.ico")  : QIcon(":/settings/qt/icons/cdrom_image.ico");
+            QIcon folder_icon = cdrom_is_dvd(t) ? QIcon(":/settings/qt/icons/dvdrom_folder.ico") : QIcon(":/settings/qt/icons/cdrom_folder.ico");
+            QIcon host_icon   = cdrom_is_dvd(t) ? QIcon(":/settings/qt/icons/dvdrom_host.ico")   : QIcon(":/settings/qt/icons/cdrom_host.ico");
             menu                  = cdromMenus[index];
             children              = menu->children();
             imageHistoryUpdatePos = dynamic_cast<QAction *>(children[cdromImageHistoryPos[slot]]);
             if (fn.left(8) == "ioctl://") {
-                menu_icon = QIcon(":/settings/qt/icons/cdrom_host.ico");
+                menu_icon = host_icon;
 #ifdef Q_OS_WINDOWS
                 menu_item_name = tr("Host CD/DVD Drive (%1)").arg(fn.right(2));
 #else
@@ -775,12 +790,12 @@ MediaMenu::updateImageHistory(int index, int slot, ui::MediaType type)
 #endif
             } else {
                 fi.setFile(fn);
-                menu_icon      = fi.isDir() ? QIcon(":/settings/qt/icons/cdrom_folder.ico") : QIcon(":/settings/qt/icons/cdrom_image.ico");
+                menu_icon      = fi.isDir() ? folder_icon : img_icon;
                 menu_item_name = fn.isEmpty() ? tr("Reload previous image") : fn;
             }
             imageHistoryUpdatePos->setIcon(menu_icon);
             break;
-        case ui::MediaType::RDisk:
+        } case ui::MediaType::RDisk:
             if (!rdiskMenus.contains(index))
                 return;
             menu                  = rdiskMenus[index];
@@ -871,6 +886,12 @@ MediaMenu::cdromUpdateMenu(int i)
     auto *menu   = cdromMenus[i];
     auto  childs = menu->children();
 
+    int   t           = cdrom[i].type;
+    QIcon img_icon    = cdrom_is_dvd(t) ? QIcon(":/settings/qt/icons/dvdrom_image.ico")  : QIcon(":/settings/qt/icons/cdrom_image.ico");
+    QIcon folder_icon = cdrom_is_dvd(t) ? QIcon(":/settings/qt/icons/dvdrom_folder.ico") : QIcon(":/settings/qt/icons/cdrom_folder.ico");
+    QIcon host_icon   = cdrom_is_dvd(t) ? QIcon(":/settings/qt/icons/dvdrom_host.ico")   : QIcon(":/settings/qt/icons/cdrom_host.ico");
+    QIcon drv_icon    = cdrom_is_dvd(t) ? QIcon(":/settings/qt/icons/dvdrom.ico")        : QIcon(":/settings/qt/icons/cdrom.ico");
+
     auto *muteMenu = dynamic_cast<QAction *>(childs[cdromMutePos]);
     muteMenu->setIcon(QIcon((cdrom[i].sound_on == 0) ? ":/settings/qt/icons/cdrom_unmute.ico" : ":/settings/qt/icons/cdrom_mute.ico"));
     muteMenu->setText((cdrom[i].sound_on == 0) ? tr("&Unmute") : tr("&Mute"));
@@ -885,16 +906,16 @@ MediaMenu::cdromUpdateMenu(int i)
         menu_item_name = tr("Host CD/DVD Drive (%1)").arg(name.right(name.length() - 8));
 #endif
         name2     = menu_item_name;
-        menu_icon = QIcon(":/settings/qt/icons/cdrom_host.ico");
+        menu_icon = host_icon;
     } else {
         QFileInfo fi(cdrom[i].image_path);
 
         menu_item_name = name.isEmpty() ? QString() : fi.fileName();
         name2          = name;
         if (name.isEmpty())
-            menu_icon = QIcon(":/settings/qt/icons/cdrom.ico");
+            menu_icon = drv_icon;
         else
-            menu_icon = fi.isDir() ? QIcon(":/settings/qt/icons/cdrom_folder.ico") : QIcon(":/settings/qt/icons/cdrom_image.ico");
+            menu_icon = fi.isDir() ? folder_icon : img_icon;
     }
     ejectMenu->setIcon(getIconWithIndicator(menu_icon, pixmap_size, QIcon::Normal, Eject));
     ejectMenu->setText(name.isEmpty() ? tr("E&ject") : tr("E&ject %1").arg(menu_item_name));
@@ -978,7 +999,7 @@ MediaMenu::rdiskMount(int i, const QString &filename, bool wp)
     }
     mhm.addImageToHistory(i, ui::MediaType::RDisk, rdisk_drives[i].prev_image_path, rdisk_drives[i].image_path);
 
-    ui_sb_update_icon_state(SB_RDISK | i, dev->drv->fp == NULL);
+    ui_sb_update_icon_state(SB_RDISK | i, rdisk_drives[i].fp == nullptr);
     ui_sb_update_icon_wp(SB_RDISK | i, wp);
     rdiskUpdateMenu(i);
     ui_sb_update_tip(SB_RDISK | i);
@@ -1158,7 +1179,7 @@ MediaMenu::moMount(int i, const QString &filename, bool wp)
     }
     mhm.addImageToHistory(i, ui::MediaType::Mo, mo_drives[i].prev_image_path, mo_drives[i].image_path);
 
-    ui_sb_update_icon_state(SB_MO | i, dev->drv->fp == nullptr);
+    ui_sb_update_icon_state(SB_MO | i, mo_drives[i].fp == nullptr);
     moUpdateMenu(i);
     ui_sb_update_tip(SB_MO | i);
 
@@ -1213,6 +1234,21 @@ MediaMenu::moReload(int index, int slot)
 }
 
 void
+MediaMenu::tapeNewImage(int i)
+{
+    NewFloppyDialog dialog(NewFloppyDialog::MediaType::Tape, parentWidget, tape_drives[i].type);
+    switch (dialog.exec()) {
+        default:
+            break;
+        case QDialog::Accepted:
+            QByteArray filename = dialog.fileName().toUtf8();
+            tape_drives[i].medium_type = dialog.mediaTypeIndex();
+            tapeMount(i, filename, false);
+            break;
+    }
+}
+
+void
 MediaMenu::tapeSelectImage(int i, bool wp)
 {
     const auto filename = QFileDialog::getOpenFileName(
@@ -1230,6 +1266,28 @@ MediaMenu::tapeMount(int i, const QString &filename, bool wp)
 {
     const auto dev       = static_cast<tape_t *>(tape_drives[i].priv);
     int        was_empty = (tape_drives[i].fp == NULL);
+
+    if ((tape_drives[i].bus_type == TAPE_BUS_FDC) || (tape_drives[i].bus_type == TAPE_BUS_LPT)) {
+        /* The floppy-tape and Ditto cores take care of their own
+           image handling through the bus-agnostic dispatch. */
+        if (!filename.isEmpty()) {
+            QByteArray filenameBytes = filename.toUtf8();
+            if (wp && (filename.left(5) != "wp://"))
+                filenameBytes = QString::asprintf(R"(wp://%s)", filename.toUtf8().data()).toUtf8();
+            tape_drive_mount(i, filenameBytes.data(), wp);
+        } else
+            tape_drive_eject(i);
+
+        mhm.addImageToHistory(i, ui::MediaType::Tape, tape_drives[i].prev_image_path, tape_drives[i].image_path);
+
+        ui_sb_update_icon_state(SB_TAPE | i, strlen(tape_drives[i].image_path) == 0);
+        ui_sb_update_icon_wp(SB_TAPE | i, tape_drives[i].read_only);
+        tapeUpdateMenu(i);
+        ui_sb_update_tip(SB_TAPE | i);
+
+        config_save();
+        return;
+    }
 
     tape_disk_close(dev);
     tape_drives[i].read_only = wp;
@@ -1265,6 +1323,18 @@ MediaMenu::tapeEject(int i)
 {
     const auto dev = static_cast<tape_t *>(tape_drives[i].priv);
 
+    if ((tape_drives[i].bus_type == TAPE_BUS_FDC) || (tape_drives[i].bus_type == TAPE_BUS_LPT)) {
+        mhm.addImageToHistory(i, ui::MediaType::Tape, tape_drives[i].image_path, QString());
+        tape_drive_eject(i);
+
+        ui_sb_update_icon_state(SB_TAPE | i, 1);
+        ui_sb_update_icon_wp(SB_TAPE | i, 0);
+        tapeUpdateMenu(i);
+        ui_sb_update_tip(SB_TAPE | i);
+        config_save();
+        return;
+    }
+
     mhm.addImageToHistory(i, ui::MediaType::Tape, tape_drives[i].image_path, QString());
     tape_disk_close(dev);
     tape_drives[i].image_path[0] = 0;
@@ -1283,6 +1353,29 @@ void
 MediaMenu::tapeReloadPrev(int i)
 {
     const auto dev = static_cast<tape_t *>(tape_drives[i].priv);
+
+    if ((tape_drives[i].bus_type == TAPE_BUS_FDC) || (tape_drives[i].bus_type == TAPE_BUS_LPT)) {
+        /* Re-mount whatever is still configured on the drive. */
+        if (tape_drives[i].image_path[0] != 0x00) {
+            char fn[MAX_IMAGE_PATH_LEN + 8];
+
+            if (tape_drives[i].read_only)
+                snprintf(fn, sizeof(fn), "wp://%s", tape_drives[i].image_path);
+            else
+                snprintf(fn, sizeof(fn), "%s", tape_drives[i].image_path);
+            tape_drive_mount(i, fn, tape_drives[i].read_only);
+        } else
+            tape_drive_eject(i);
+
+        ui_sb_update_icon_state(SB_TAPE | i, strlen(tape_drives[i].image_path) == 0);
+        ui_sb_update_icon_wp(SB_TAPE | i, tape_drives[i].read_only);
+
+        tapeUpdateMenu(i);
+        ui_sb_update_tip(SB_TAPE | i);
+
+        config_save();
+        return;
+    }
 
     tape_disk_reload(dev);
     if (strlen(tape_drives[i].image_path) == 0) {
@@ -1330,6 +1423,12 @@ MediaMenu::tapeUpdateMenu(int i)
             break;
         case TAPE_BUS_SCSI:
             busName = "SCSI";
+            break;
+        case TAPE_BUS_FDC:
+            busName = "FDC";
+            break;
+        case TAPE_BUS_LPT:
+            busName = "LPT";
             break;
     }
 

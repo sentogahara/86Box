@@ -73,6 +73,8 @@ typedef struct ibm8514_t {
     uint8_t        pos_regs[8];
     char *rom_path;
 
+    void *log;
+
     int force_old_addr;
     int type;
     ibm8514_card_type local;
@@ -98,7 +100,6 @@ typedef struct ibm8514_t {
     int       dac_b;
     int       internal_pitch;
     int       hwcursor_on;
-    int       modechange;
 
     uint64_t  dispontime;
     uint64_t  dispofftime;
@@ -157,6 +158,7 @@ typedef struct ibm8514_t {
         int16_t  sy;
         int16_t  dx;
         int16_t  dy;
+        int16_t  dy2;
         int16_t  err;
         uint32_t src;
         uint32_t dest;
@@ -212,6 +214,8 @@ typedef struct ibm8514_t {
     int      split;
     int      h_disp;
     int      h_total;
+    int      h_total_back;
+    int      vga_htotal;
     int      h_sync_start;
     int      h_sync_width;
     int      h_disp_time;
@@ -252,12 +256,14 @@ typedef struct ibm8514_t {
     int     vsyncwidth;
     int     vtotal;
     int     v_disp;
-    int     v_disp2;
     int     vdisp;
     int     vdisp2;
     int     disp_cntl;
-    int     disp_cntl_2;
+    int     disp_change;
+    int     extended_mode;
     int     interlace;
+    int     disp_cntl_interlace;
+    int     disp_cntl_double_scan;
     uint16_t subsys_cntl;
     uint8_t subsys_stat;
 
@@ -277,11 +283,14 @@ typedef struct ibm8514_t {
     int      linear;
     uint32_t vram_amount;
     int      vram_512k_8514;
+    uint32_t vram_8514_addr_mask;
     int      vendor_mode;
+    int      monitorid;
     int      _8514on;
     int      _8514crt;
     PALETTE  _8514pal;
     uint8_t  ven_clock;
+    uint8_t  double_clock;
 
     latch8514_t latch;
 

@@ -67,7 +67,8 @@ typedef struct azt2320_t {
     uint16_t cur_mpu401_addr;
     uint16_t cur_opl_addr;
 
-    int cur_irq, cur_dma;
+    int cur_irq;
+    int cur_dma;
     int cur_wss_enabled;
     int cur_wss_irq;
     int cur_wss_dma;
@@ -120,16 +121,22 @@ azt2320_enable_wss(uint8_t enable, void *priv)
 }
 
 static void
-azt2320_get_buffer(int32_t *buffer, int len, void *priv)
+azt2320_get_buffer(int32_t *buffer, uint16_t len, void *priv)
 {
     azt2320_t *azt2320 = (azt2320_t *) priv;
 
     /* wss part */
     ad1848_update(&azt2320->ad1848);
-    for (int c = 0; c < len * 2; c++)
+    for (uint16_t c = 0; c < len * 2; c++)
         buffer[c] += (azt2320->ad1848.buffer[c] / 2);
 
     azt2320->ad1848.pos = 0;
+}
+
+static void
+azt2320_get_sbpro_buffer(int32_t *buffer, uint16_t len, void *priv)
+{
+    azt2320_t *azt2320 = (azt2320_t *) priv;
 
     /* sbprov2 part */
     sb_get_buffer_sbpro(buffer, len, azt2320->sb);
@@ -172,6 +179,7 @@ azt2320_pnp_config_changed(uint8_t ld, isapnp_device_config_t *config, void *pri
             sb_dsp_setirq(&azt2320->sb->dsp, 0);
 
             ad1848_setdma(&azt2320->ad1848, 0);
+            ad1848_setdma2(&azt2320->ad1848, 0);
             sb_dsp_setdma8(&azt2320->sb->dsp, 0);
 
             if (config->activate) {
@@ -207,6 +215,10 @@ azt2320_pnp_config_changed(uint8_t ld, isapnp_device_config_t *config, void *pri
                     ad1848_setdma(&azt2320->ad1848, azt2320->cur_wss_dma);
                     azt2320_log(azt2320->log, "Updated WSS Playback/SB DMA to %04X\n", azt2320->cur_dma);
                 }
+                if (config->dma[1].dma != ISAPNP_DMA_DISABLED) {
+                    ad1848_setdma2(&azt2320->ad1848, config->dma[1].dma);
+                    azt2320_log(azt2320->log, "Updated WSS Capture DMA to %04X\n", config->dma[1].dma);
+                }
             }
             break;
         case 2: /* MPU401 */
@@ -232,7 +244,7 @@ azt2320_pnp_config_changed(uint8_t ld, isapnp_device_config_t *config, void *pri
 }
 
 static void *
-azt2320_init(const device_t *info)
+azt2320_init(UNUSED(const device_t *info))
 {
     azt2320_t *azt2320 = calloc(1, sizeof(azt2320_t));
 
@@ -266,7 +278,7 @@ azt2320_init(const device_t *info)
     azt2320->sb->opl_enabled = device_get_config_int("opl");
 
     if (azt2320->sb->opl_enabled)
-        fm_driver_get(FM_YMF262, &azt2320->sb->opl);
+        fm_driver_get_cs(FM_YMF289B, &azt2320->sb->opl);
 
     sb_dsp_set_real_opl(&azt2320->sb->dsp, 1);
     sb_dsp_init(&azt2320->sb->dsp, SBPRO_DSP_302, SB_SUBTYPE_CLONE_AZT2320_0X13, azt2320);
@@ -284,6 +296,7 @@ azt2320_init(const device_t *info)
     io_sethandler(azt2320->cur_addr + 4, 0x0002, sb_ct1345_mixer_read, NULL, NULL, sb_ct1345_mixer_write, NULL, NULL, azt2320->sb);
 
     sound_add_handler(azt2320_get_buffer, azt2320);
+    sound_add_handler(azt2320_get_sbpro_buffer, azt2320);
 
     if (azt2320->sb->opl_enabled) {
         music_add_handler(sb_get_music_buffer_sbpro, azt2320->sb);
@@ -300,7 +313,7 @@ azt2320_init(const device_t *info)
         azt2320->mpu = NULL;
 
     if (device_get_config_int("receive_input"))
-        midi_in_handler(1, sb_dsp_input_msg, sb_dsp_input_sysex, &azt2320->sb->dsp);
+        midi_in_handler(1, sb_dsp_input_msg, sb_dsp_input_sysex, sb_dsp_input_remain, &azt2320->sb->dsp);
 
     azt2320->gameport = gameport_add(&gameport_pnp_device);
 
@@ -402,7 +415,7 @@ static const device_config_t azt2320_config[] = {
 };
 
 const device_t azt2320_device = {
-    .name          = "HP Multimedia Pro 16V-A (AZT2320)",
+    .name          = "HP Multimedia Pro 16V-A",
     .internal_name = "azt2320",
     .flags         = DEVICE_ISA16,
     .local         = SB_SUBTYPE_CLONE_AZT2320_0X13,
@@ -412,5 +425,6 @@ const device_t azt2320_device = {
     .available     = azt2320_available,
     .speed_changed = azt2320_speed_changed,
     .force_redraw  = NULL,
+    .alias         = "AZT2320",
     .config        = azt2320_config
 };

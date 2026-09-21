@@ -7,6 +7,8 @@ namespace Ui {
 class SettingsMachine;
 }
 
+class SettingsCompleter;
+
 class SettingsMachine : public QWidget {
     Q_OBJECT
 
@@ -14,7 +16,10 @@ public:
     explicit SettingsMachine(QWidget *parent = nullptr);
     ~SettingsMachine();
 
-    void save();
+    int  changed();
+
+    void restore();
+    void save(int soft);
 
 signals:
     void currentMachineChanged(int machineId);
@@ -27,6 +32,7 @@ private slots:
     void on_comboBoxMachine_currentIndexChanged(int index);
     void on_comboBoxMachineType_currentIndexChanged(int index);
     void on_checkBoxFPUSoftfloat_stateChanged(int state);
+    void on_checkBoxDynamicRecompiler_stateChanged(int state);
 
     void on_radioButtonSmallerFrames_clicked();
 
@@ -34,6 +40,10 @@ private slots:
 
 private:
     Ui::SettingsMachine *ui;
+
+    int                  machine_cfg_changed;
+
+    SettingsCompleter *  sc;
 };
 
 #endif // QT_SETTINGSMACHINE_HPP

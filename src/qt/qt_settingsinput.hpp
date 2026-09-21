@@ -20,7 +20,10 @@ public:
     explicit SettingsInput(QWidget *parent = nullptr);
     ~SettingsInput();
 
-    void save();
+    int  changed();
+
+    void restore();
+    void save(int soft);
 
 public slots:
     void onCurrentMachineChanged(int machineId);
@@ -32,6 +35,9 @@ private slots:
     void on_comboBoxMouse_currentIndexChanged(int index);
     void on_pushButtonConfigureMouse_clicked();
 
+    void on_comboBoxTablet_currentIndexChanged(int index);
+    void on_pushButtonConfigureTablet_clicked();
+
     void on_comboBoxJoystick0_currentIndexChanged(int index);
     void on_pushButtonJoystick01_clicked();
     void on_pushButtonJoystick02_clicked();
@@ -40,8 +46,23 @@ private slots:
 
 private:
     Ui::SettingsInput *ui;
+
+    int                kbd_config_changed    = 0;
+    int                mouse_config_changed  = 0;
+    int                tablet_config_changed = 0;
+
+    int                keyboardType = 0;
+    int                mouseType = 0;
+    int                tabletType = 0;
+    int                joystickType = 0;
+
     int                machineId = 0;
-    void               refreshInputList();
+
+    SettingsCompleter   *scKeyboard;
+    SettingsCompleter   *scMouse;
+    SettingsCompleter   *scTablet;
+
+    SettingsCompleter   *scJoystick0;
 };
 
 #endif // QT_SETTINGSINPUT_HPP

@@ -174,7 +174,7 @@ static uint8_t pipc_read(int func, int addr, int len, void *priv);
 static void    pipc_write(int func, int addr, int len, uint8_t val, void *priv);
 
 static void
-pipc_io_trap_pact(UNUSED(int size), UNUSED(uint16_t addr), UNUSED(uint8_t write), UNUSED(uint8_t val), void *priv)
+pipc_io_trap_pact(UNUSED(const uint16_t size), UNUSED(const uint16_t port), UNUSED(const uint8_t write), UNUSED(const uint8_t val), void *priv)
 {
     pipc_io_trap_t *trap = (pipc_io_trap_t *) priv;
 
@@ -187,7 +187,7 @@ pipc_io_trap_pact(UNUSED(int size), UNUSED(uint16_t addr), UNUSED(uint8_t write)
 }
 
 static void
-pipc_io_trap_glb(UNUSED(int size), UNUSED(uint16_t addr), uint8_t write, UNUSED(uint8_t val), void *priv)
+pipc_io_trap_glb(UNUSED(const uint16_t size), UNUSED(const uint16_t port), const uint8_t write, UNUSED(const uint8_t val), void *priv)
 {
     pipc_io_trap_t *trap = (pipc_io_trap_t *) priv;
 
@@ -916,7 +916,7 @@ pipc_sb_handlers(pipc_t *dev, uint8_t modem)
 }
 
 static void
-pipc_sb_get_buffer(int32_t *buffer, int len, void *priv)
+pipc_sb_get_buffer(int32_t *buffer, uint16_t len, void *priv)
 {
     pipc_t *dev = (pipc_t *) priv;
 
@@ -974,7 +974,7 @@ pipc_read(int func, int addr, UNUSED(int len), void *priv)
     else if (func == pm_func) { /* Power */
         ret = dev->power_regs[addr];
         if (addr == 0x42) {
-            if (dev->nvr->regs[0x0d] & 0x80)
+            if (dev->nvr->regs[0x0d] & 0x40)
                 ret |= 0x10;
             else
                 ret &= ~0x10;
@@ -986,9 +986,12 @@ pipc_read(int func, int addr, UNUSED(int len), void *priv)
                 ret |= 0x10;
         }
     } else if ((func <= (pm_func + 2)) && !(dev->pci_isa_regs[0x85] & ((func == (pm_func + 1)) ? 0x04 : 0x08))) { /* AC97 / MC97 */
-        if (addr == 0x40)
-            ret = ac97_via_read_status(dev->ac97);
-        else
+        if (addr == 0x40) {
+            if (dev->local >= VIA_PIPC_686A)
+                ret = ac97_via_read_status(dev->ac97);
+            else
+                ret = 0x00;
+        } else
             ret = dev->ac97_regs[func - pm_func - 1][addr];
     }
 
@@ -1802,7 +1805,7 @@ pipc_init(const device_t *info)
 
     kbc_params |= KBC_VEN_VIA;
 
-    if (machine_get_kbc_device(machine) == NULL)
+    if ((machine_get_kbc_device(machine) == NULL) && !(info->local & VIA_PIPC_NO_KBC))
         device_add_params(&kbc_at_device, (void *) (uintptr_t) kbc_params);
 
     return dev;

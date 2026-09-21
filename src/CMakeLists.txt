@@ -34,8 +34,10 @@ add_executable(86Box
     dma.c
     ddma.c
     nmi.c
+    pci_dummy.c
     pic.c
     pit.c
+    pit_exact.c
     pit_fast.c
     port_6x.c
     port_92.c
@@ -119,6 +121,7 @@ endif()
 
 target_link_libraries(86Box
     cpu
+    char
     chipset
     mch
     dev
@@ -150,6 +153,10 @@ if(STATIC_BUILD)
     if(MINGW OR UNIX)
         target_link_options(86Box PRIVATE "-static")
         set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+    endif()
+
+    if(MINGW AND NOT $ENV{MSYSTEM} MATCHES "MINGW")
+        target_link_libraries(86Box ucrt)
     endif()
 endif()
 
@@ -198,6 +205,7 @@ else()
 endif()
 
 add_subdirectory(cdrom)
+add_subdirectory(char)
 add_subdirectory(chipset)
 
 add_subdirectory(cpu)
@@ -219,6 +227,26 @@ if(WIN32 OR (APPLE AND CMAKE_MACOSX_BUNDLE))
 else()
     # On Linux we want to copy the binary to the `bin` folder.
     install(TARGETS 86Box)
+endif()
+
+if(CMAKE_SYSTEM_NAME MATCHES "Linux")
+    include(GNUInstallDirs)
+
+    set(ASSETS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/unix/assets")
+
+    # Icons
+    foreach(ICON_SIZE 16 20 24 32 40 48 64 72 128 256)
+        install(FILES "${ASSETS_DIR}/${ICON_SIZE}x${ICON_SIZE}/net.86box.86Box.png"
+            DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/${ICON_SIZE}x${ICON_SIZE}/apps")
+    endforeach()
+
+    # Desktop entry
+    install(FILES "${ASSETS_DIR}/net.86box.86Box.desktop"
+        DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/applications")
+
+    # AppStream metadata
+    install(FILES "${ASSETS_DIR}/net.86box.86Box.metainfo.xml"
+        DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/metainfo")
 endif()
 
 
@@ -278,6 +306,8 @@ add_subdirectory(video)
 if (APPLE)
     add_subdirectory(mac)
 endif()
+
+add_subdirectory(osd)
 
 if (QT)
     add_subdirectory(qt)

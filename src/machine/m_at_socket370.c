@@ -93,18 +93,21 @@ machine_at_awo671r_init(const machine_t *model)
     pci_register_slot(0x09, PCI_CARD_NORMAL,      1, 2, 3, 4);
     pci_register_slot(0x0A, PCI_CARD_NORMAL,      2, 3, 4, 1);
     pci_register_slot(0x0B, PCI_CARD_NORMAL,      3, 4, 1, 2);
-    pci_register_slot(0x0C, PCI_CARD_NORMAL,      4, 1, 2, 3);
+    pci_register_slot(0x0C, PCI_CARD_SOUND,       4, 1, 2, 3);
     pci_register_slot(0x0D, PCI_CARD_VIDEO,       2, 3, 4, 1);
     pci_register_slot(0x01, PCI_CARD_AGPBRIDGE,   1, 2, 3, 4);
 
     device_add(&i440bx_device);
     device_add(&piix4e_device);
     device_add_inst_params(&w83977_device, 1, (void *) (W83977EF | W83977_AMI | W83977_NO_NVR));
-    device_add_inst_params(&w83977_device, 2, (void *) (W83977EF | W83977_AMI | W83977_NO_NVR));
+    device_add_inst_params(&w83977_device, 2, (void *) (W83977EF | W83977_NO_NVR));
     device_add(&sst_flash_39sf020_device);
     if (gfxcard[0] == VID_INTERNAL)
         device_add(machine_get_vid_device(machine));
     spd_register(SPD_TYPE_SDRAM, 0x3, 256);
+
+    if (sound_card_current[0] == SOUND_INTERNAL)
+        machine_snd = device_add(machine_get_snd_device(machine));
 
     return ret;
 }
@@ -178,6 +181,99 @@ machine_at_cubx_init(const machine_t *model)
     device_add(&sst_flash_39sf020_device);
     spd_register(SPD_TYPE_SDRAM, 0xF, 256);
     device_add(&as99127f_device); /* fans: Chassis, CPU, Power; temperatures: MB, JTPWR, CPU */
+
+    return ret;
+}
+
+static const device_config_t em440_config[] = {
+    // clang-format off
+    {
+        .name           = "bios",
+        .description    = "BIOS Version",
+        .type           = CONFIG_BIOS,
+        .default_string = "em440",
+        .default_int    = 0,
+        .file_filter    = NULL,
+        .spinner        = { 0 },
+        .selection      = { { 0 } },
+        .bios           = {
+            {
+                .name          = "PhoenixBIOS 4.0 Release 6.0 - Revision 1.03B",
+                .internal_name = "em440_103b",
+                .bios_type     = BIOS_NORMAL,
+                .files_no      = 1,
+                .local         = 0,
+                .size          = 524288,
+                .files         = { "roms/machines/em440/BIOS512K.ROM", "" }
+            },
+            {
+                .name          = "PhoenixBIOS 4.0 Release 6.0 - Revision 1.04A",
+                .internal_name = "em440",
+                .bios_type     = BIOS_NORMAL,
+                .files_no      = 1,
+                .local         = 0,
+                .size          = 262144,
+                .files         = { "roms/machines/em440/BIOS256K.ROM", "" }
+            },
+            { .files_no = 0 }
+        }
+    },
+    { .name = "", .description = "", .type = CONFIG_END }
+    // clang-format on
+};
+
+const device_t em440_device = {
+    .name          = "RadiSys Endura EM440",
+    .internal_name = "em440",
+    .flags         = 0,
+    .local         = 0,
+    .init          = NULL,
+    .close         = NULL,
+    .reset         = NULL,
+    .available     = NULL,
+    .speed_changed = NULL,
+    .force_redraw  = NULL,
+    .config        = em440_config
+};
+
+int
+machine_at_em440_init(const machine_t *model)
+{
+    int         ret = 0;
+    const char *fn;
+
+    /* No ROMs available */
+    if (!device_available(model->device))
+        return ret;
+
+    device_context(model->device);
+    fn  = device_get_bios_file(machine_get_device(machine), device_get_config_bios("bios"), 0);
+    int size = device_get_bios_file_size(machine_get_device(machine), device_get_config_bios("bios"));
+    ret = bios_load_linear(fn, 0x00100000 - size, size, 0);
+    device_context_restore();
+
+    if (bios_only || !ret)
+        return ret;
+
+    machine_at_common_init(model);
+
+    pci_init(PCI_CONFIG_TYPE_1);
+    pci_register_slot(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0);
+    pci_register_slot(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4);
+    pci_register_slot(0x08, PCI_CARD_VIDEO,       1, 2, 3, 4); /* not yet implemented */
+    pci_register_slot(0x09, PCI_CARD_NORMAL,      4, 1, 2, 3);
+    pci_register_slot(0x0A, PCI_CARD_NORMAL,      3, 4, 1, 2);
+    pci_register_slot(0x0B, PCI_CARD_NORMAL,      2, 3, 4, 1);
+    pci_register_slot(0x10, PCI_CARD_NORMAL,      4, 1, 2, 3);
+    pci_register_slot(0x12, PCI_CARD_NORMAL,      3, 4, 1, 2);
+    pci_register_slot(0x14, PCI_CARD_NORMAL,      2, 3, 4, 1);
+    pci_register_slot(0x01, PCI_CARD_AGPBRIDGE,   1, 2, 3, 4);
+
+    device_add(&i440bx_device);
+    device_add(&piix4e_device);
+    device_add_params(&pc87309_device, (void *) (PCX730X_15C | PCX730X_AMI | PC87309_PC87309));
+    device_add(&micron_flash_x00_t_device);
+    spd_register(SPD_TYPE_SDRAM, 0x7, 256);
 
     return ret;
 }
@@ -312,18 +408,18 @@ machine_at_m773_init(const machine_t *model)
     hwm_values.voltages[2] = hwm_get_vcore();
 
     if (sound_card_current[0] == SOUND_INTERNAL)
-        device_add(&cmi8738_onboard_device);
+        device_add(machine_get_snd_device(machine));
 
     return ret;
 }
 
 /* VIA Apollo Pro */
 int
-machine_at_apas3_init(const machine_t *model)
+machine_at_vim863s_init(const machine_t *model)
 {
     int ret;
 
-    ret = bios_load_linear("roms/machines/apas3/V0218SAG.BIN",
+    ret = bios_load_linear("roms/machines/vim863s/V0218SAG.BIN",
                            0x000c0000, 262144, 0);
 
     if (bios_only || !ret)
@@ -339,6 +435,9 @@ machine_at_apas3_init(const machine_t *model)
     pci_register_slot(0x13, PCI_CARD_NORMAL,      3, 4, 1, 2);
     pci_register_slot(0x14, PCI_CARD_NORMAL,      4, 1, 2, 3);
     pci_register_slot(0x01, PCI_CARD_AGPBRIDGE,   1, 2, 3, 4);
+
+    if ((sound_card_current[0] == SOUND_INTERNAL) && machine_get_snd_device(machine)->available())
+        machine_snd = device_add(machine_get_snd_device(machine));
 
     device_add(&via_apro_device);
     device_add(&via_vt82c586b_device);
@@ -365,22 +464,27 @@ machine_at_p6bap_init(const machine_t *model)
 
     pci_init(PCI_CONFIG_TYPE_1);
     pci_register_slot(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0);
-    pci_register_slot(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 3, 4);
-    pci_register_slot(0x09, PCI_CARD_NORMAL, 1, 2, 3, 4);
-    pci_register_slot(0x0a, PCI_CARD_NORMAL, 2, 3, 4, 1);
-    pci_register_slot(0x0b, PCI_CARD_NORMAL, 3, 4, 1, 2);
-    pci_register_slot(0x0c, PCI_CARD_NORMAL, 4, 1, 2, 3);
-    pci_register_slot(0x0d, PCI_CARD_NORMAL, 4, 3, 2, 1);
-    pci_register_slot(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4);
+    pci_register_slot(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4);
+    pci_register_slot(0x09, PCI_CARD_NORMAL,      1, 2, 3, 4);
+    pci_register_slot(0x0a, PCI_CARD_NORMAL,      2, 3, 4, 1);
+    pci_register_slot(0x0b, PCI_CARD_NORMAL,      3, 4, 1, 2);
+    pci_register_slot(0x0c, PCI_CARD_NORMAL,      4, 1, 2, 3);
+    pci_register_slot(0x0d, PCI_CARD_SOUND,       4, 3, 2, 1); /* assumed */
+    pci_register_slot(0x01, PCI_CARD_AGPBRIDGE,   1, 2, 3, 4);
 
     device_add(&via_apro133a_device);  /* Rebranded as ET82C693A */
-    device_add(&via_vt82c596b_device); /* Rebranded as ET82C696B */
+    device_add_params(&via_vt82c596b_device, (void *) VIA_PIPC_NO_KBC); /* Rebranded as ET82C696B */
     device_add_params(&w83977_device, (void *) (W83977EF | W83977_AMI | W83977_NO_NVR));
     device_add(&sst_flash_39sf020_device);
     spd_register(SPD_TYPE_SDRAM, 0x7, 256);
+    device_add(&gl520sm_2d_device);  /* fans: CPU, Chassis; temperature: System */
+    hwm_values.temperatures[0] += 2; /* System offset */
+    hwm_values.temperatures[1] += 2; /* CPU offset */
+    hwm_values.voltages[0] = 3300;   /* Vcore and 3.3V are swapped */
+    hwm_values.voltages[2] = hwm_get_vcore();
 
     if (sound_card_current[0] == SOUND_INTERNAL)
-        device_add(&cmi8738_onboard_device);
+        device_add(machine_get_snd_device(machine));
 
     return ret;
 }
@@ -419,7 +523,7 @@ machine_at_6via90ap_init(const machine_t *model)
     hwm_values.temperatures[2] = 0;  /* unused */
 
     if (sound_card_current[0] == SOUND_INTERNAL)
-        device_add(&alc100_device); /* ALC100P identified on similar Acorp boards (694TA, 6VIA90A1) */
+        device_add(machine_get_snd_device(machine)); /* ALC100P identified on similar Acorp boards (694TA, 6VIA90A1) */
 
     return ret;
 }
@@ -458,7 +562,7 @@ machine_at_cuv4xls_init(const machine_t *model)
     device_add(&as99127f_device); /* fans: Chassis, CPU, Power; temperatures: MB, JTPWR, CPU */
 
     if (sound_card_current[0] == SOUND_INTERNAL)
-        device_add(&cmi8738_onboard_device);
+        device_add(machine_get_snd_device(machine));
 
     return ret;
 }
@@ -476,7 +580,7 @@ static const device_config_t ms6318_config[] = {
         .selection      = { { 0 } },
         .bios           = {
             {
-                .name          = "Award Modular BIOS v6.00PG - Revision 1.1",
+                .name          = "AwardBIOS v6.00PG - Revision 1.1",
                 .internal_name = "ms6318_110",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -485,7 +589,7 @@ static const device_config_t ms6318_config[] = {
                 .files         = { "roms/machines/ms6318/w6318vms.110", "" }
             },
             {
-                .name          = "Award Modular BIOS v6.00PG - Revision 1.2",
+                .name          = "AwardBIOS v6.00PG - Revision 1.2",
                 .internal_name = "ms6318",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -494,7 +598,7 @@ static const device_config_t ms6318_config[] = {
                 .files         = { "roms/machines/ms6318/w6318vms.120", "" }
             },
             {
-                .name          = "Award Modular BIOS v6.00PG - Revision 1.8 (HP Pavilion A7xx)",
+                .name          = "AwardBIOS v6.00PG - Revision 1.8 (HP Pavilion A7xx)",
                 .internal_name = "ms6318_180",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -503,7 +607,7 @@ static const device_config_t ms6318_config[] = {
                 .files         = { "roms/machines/ms6318/med2000v2.bin", "" }
             },
             {
-                .name          = "Award Modular BIOS v6.00PG - Revision 1.9 (HP Pavilion A8xx)",
+                .name          = "AwardBIOS v6.00PG - Revision 1.9 (HP Pavilion A8xx)",
                 .internal_name = "ms6318_190",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -512,7 +616,7 @@ static const device_config_t ms6318_config[] = {
                 .files         = { "roms/machines/ms6318/med2000.bin", "" }
             },
             {
-                .name          = "Award Modular BIOS v6.00PG - Revision 2.02 (HP Medion 2000A)",
+                .name          = "AwardBIOS v6.00PG - Revision 2.02 (HP Medion 2000A)",
                 .internal_name = "ms6318_202",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -521,7 +625,7 @@ static const device_config_t ms6318_config[] = {
                 .files         = { "roms/machines/ms6318/ms6318hp.bin", "" }
             },
             {
-                .name          = "Award Modular BIOS v6.00PG - Revision 1.3 (Medion MED 2000)",
+                .name          = "AwardBIOS v6.00PG - Revision 1.3 (Medion MED 2000)",
                 .internal_name = "ms6318_130",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -538,7 +642,7 @@ static const device_config_t ms6318_config[] = {
 
 const device_t ms6318_device = {
     .name          = "MSI MS-6318",
-    .internal_name = "ms6318_device",
+    .internal_name = "ms6318",
     .flags         = 0,
     .local         = 0,
     .init          = NULL,

@@ -579,13 +579,13 @@ voodoo_readl(uint32_t addr, void *priv)
                 break;
 
             case SST_fbiInit5:
-                temp = voodoo->fbiInit5 & ~0x1ff;
+                temp = (voodoo->fbiInit5 & ~0x1ff) | ((voodoo->board_id & 0xf) << 5);
                 break;
             case SST_fbiInit6:
                 temp = voodoo->fbiInit6;
                 break;
             case SST_fbiInit7:
-                temp = voodoo->fbiInit7 & ~0xff;
+                temp = (voodoo->fbiInit7 & ~0xff) | ((voodoo->board_id >> 4) & 1);
                 break;
 
             case SST_cmdFifoBaseAddr:
@@ -1150,12 +1150,11 @@ voodoo_force_blit(void *priv)
     }
 }
 
-void *
-voodoo_card_init(void)
+static void *
+voodoo_card_init(const device_t *info)
 {
     int       c;
-    voodoo_t *voodoo = malloc(sizeof(voodoo_t));
-    memset(voodoo, 0, sizeof(voodoo_t));
+    voodoo_t *voodoo = calloc(1, sizeof(voodoo_t));
 
     voodoo_init_relax_settings(voodoo);
     voodoo->bilinear_enabled  = device_get_config_int("bilinear");
@@ -1164,13 +1163,20 @@ voodoo_card_init(void)
     voodoo->texture_size      = device_get_config_int("texture_memory");
     voodoo->texture_mask      = (voodoo->texture_size << 20) - 1;
     voodoo->fb_size           = device_get_config_int("framebuffer_memory");
-    voodoo->fb_mask           = (voodoo->fb_size << 20) - 1;
     voodoo->render_threads    = device_get_config_int("render_threads");
     voodoo->odd_even_mask     = voodoo->render_threads - 1;
+
+    const uint64_t bios_flags = device_get_bios_flags(info, device_get_config_bios("type"));
+    video_clamp_vram(bios_flags, &voodoo->fb_size);
+
+    voodoo->fb_mask           = (voodoo->fb_size << 20) - 1;
+
 #ifndef NO_CODEGEN
     voodoo->use_recompiler = device_get_config_int("recompiler");
 #endif
-    voodoo->type = device_get_config_int("type");
+    int type         = (int) device_get_bios_local(info, device_get_config_bios("type"));
+    voodoo->type     = type & 0x0f;
+    voodoo->board_id = ((type >> 8) & 0x0f);
     switch (voodoo->type) {
         case VOODOO_1:
             voodoo->dual_tmus = 0;
@@ -1195,19 +1201,19 @@ voodoo_card_init(void)
 
     mem_mapping_add(&voodoo->mapping, 0, 0, NULL, voodoo_readw, voodoo_readl, NULL, voodoo_writew, voodoo_writel, NULL, MEM_MAPPING_EXTERNAL, voodoo);
 
-    voodoo->fb_mem     = malloc(4 * 1024 * 1024);
-    voodoo->tex_mem[0] = malloc(voodoo->texture_size * 1024 * 1024);
+    voodoo->fb_mem     = calloc(1, 4 * 1024 * 1024);
+    voodoo->tex_mem[0] = calloc(1, voodoo->texture_size * 1024 * 1024);
     if (voodoo->dual_tmus)
-        voodoo->tex_mem[1] = malloc(voodoo->texture_size * 1024 * 1024);
+        voodoo->tex_mem[1] = calloc(1, voodoo->texture_size * 1024 * 1024);
     voodoo->tex_mem_w[0] = (uint16_t *) voodoo->tex_mem[0];
     voodoo->tex_mem_w[1] = (uint16_t *) voodoo->tex_mem[1];
 
     for (c = 0; c < TEX_CACHE_MAX; c++) {
-        voodoo->texture_cache[0][c].data     = malloc((256 * 256 + 256 * 256 + 128 * 128 + 64 * 64 + 32 * 32 + 16 * 16 + 8 * 8 + 4 * 4 + 2 * 2) * 4);
+        voodoo->texture_cache[0][c].data     = calloc(1, (256 * 256 + 256 * 256 + 128 * 128 + 64 * 64 + 32 * 32 + 16 * 16 + 8 * 8 + 4 * 4 + 2 * 2) * 4);
         voodoo->texture_cache[0][c].base     = -1; /*invalid*/
         voodoo->texture_cache[0][c].refcount = 0;
         if (voodoo->dual_tmus) {
-            voodoo->texture_cache[1][c].data     = malloc((256 * 256 + 256 * 256 + 128 * 128 + 64 * 64 + 32 * 32 + 16 * 16 + 8 * 8 + 4 * 4 + 2 * 2) * 4);
+            voodoo->texture_cache[1][c].data     = calloc(1, (256 * 256 + 256 * 256 + 128 * 128 + 64 * 64 + 32 * 32 + 16 * 16 + 8 * 8 + 4 * 4 + 2 * 2) * 4);
             voodoo->texture_cache[1][c].base     = -1; /*invalid*/
             voodoo->texture_cache[1][c].refcount = 0;
         }
@@ -1318,8 +1324,7 @@ void *
 voodoo_2d3d_card_init(int type)
 {
     int       c;
-    voodoo_t *voodoo = malloc(sizeof(voodoo_t));
-    memset(voodoo, 0, sizeof(voodoo_t));
+    voodoo_t *voodoo = calloc(1, sizeof(voodoo_t));
 
     voodoo_init_relax_settings(voodoo);
     voodoo->bilinear_enabled  = device_get_config_int("bilinear");
@@ -1337,11 +1342,11 @@ voodoo_2d3d_card_init(int type)
     voodoo_generate_filter_v2(voodoo);
 
     for (c = 0; c < TEX_CACHE_MAX; c++) {
-        voodoo->texture_cache[0][c].data     = malloc((256 * 256 + 256 * 256 + 128 * 128 + 64 * 64 + 32 * 32 + 16 * 16 + 8 * 8 + 4 * 4 + 2 * 2) * 4);
+        voodoo->texture_cache[0][c].data     = calloc(1, (256 * 256 + 256 * 256 + 128 * 128 + 64 * 64 + 32 * 32 + 16 * 16 + 8 * 8 + 4 * 4 + 2 * 2) * 4);
         voodoo->texture_cache[0][c].base     = -1; /*invalid*/
         voodoo->texture_cache[0][c].refcount = 0;
         if (voodoo->dual_tmus) {
-            voodoo->texture_cache[1][c].data     = malloc((256 * 256 + 256 * 256 + 128 * 128 + 64 * 64 + 32 * 32 + 16 * 16 + 8 * 8 + 4 * 4 + 2 * 2) * 4);
+            voodoo->texture_cache[1][c].data     = calloc(1, (256 * 256 + 256 * 256 + 128 * 128 + 64 * 64 + 32 * 32 + 16 * 16 + 8 * 8 + 4 * 4 + 2 * 2) * 4);
             voodoo->texture_cache[1][c].base     = -1; /*invalid*/
             voodoo->texture_cache[1][c].refcount = 0;
         }
@@ -1448,20 +1453,20 @@ voodoo_2d3d_card_init(int type)
 }
 
 void *
-voodoo_init(UNUSED(const device_t *info))
+voodoo_init(const device_t *info)
 {
-    voodoo_set_t *voodoo_set = malloc(sizeof(voodoo_set_t));
-    uint32_t      tmuConfig  = 1;
-    int           type;
-    memset(voodoo_set, 0, sizeof(voodoo_set_t));
+    voodoo_set_t *voodoo_set    = calloc(1, sizeof(voodoo_set_t));
+    uint32_t      tmuConfig     = 1;
 
-    type = device_get_config_int("type");
+    const int     type          = (int) device_get_bios_local(info, device_get_config_bios("type")) & 0x0f;
 
     voodoo_set->nr_cards        = device_get_config_int("sli") ? 2 : 1;
-    voodoo_set->voodoos[0]      = voodoo_card_init();
+
+    voodoo_set->voodoos[0]      = voodoo_card_init(info);
     voodoo_set->voodoos[0]->set = voodoo_set;
+
     if (voodoo_set->nr_cards == 2) {
-        voodoo_set->voodoos[1] = voodoo_card_init();
+        voodoo_set->voodoos[1] = voodoo_card_init(info);
 
         voodoo_set->voodoos[1]->set = voodoo_set;
 
@@ -1614,17 +1619,64 @@ static const device_config_t voodoo_config[] = {
     {
         .name           = "type",
         .description    = "Voodoo type",
-        .type           = CONFIG_SELECTION,
+        .type           = CONFIG_BIOS,
+        .default_string = "voodoo",
         .default_int    = 0,
         .file_filter    = NULL,
         .spinner        = { 0 },
-        .selection = {
-            { .description = "3Dfx Voodoo Graphics",              .value = VOODOO_1    },
-            { .description = "Obsidian SB50 + Amethyst (2 TMUs)", .value = VOODOO_SB50 },
-            { .description = "3Dfx Voodoo 2",                     .value = VOODOO_2    },
-            { .description = ""                                                        }
+        .bios           = {
+            {
+                .name          = "3Dfx Voodoo Graphics",
+                .internal_name = "voodoo",
+                .bios_type     = BIOS_NORMAL,
+                .files_no      = -1,
+                .local         = VOODOO_1 | (VOODOO_GENERIC << 10),
+                .size          = 0,
+                .flags         = BIOS_LIMIT_MAX_MEMORY | (2 << 8),
+                .files         = { "" }
+            },
+            {
+                .name          = "Diamond Monster 3D",
+                .internal_name = "diamond_monster_3d",
+                .bios_type     = BIOS_NORMAL,
+                .files_no      = -1,
+                .local         = VOODOO_1 | (VOODOO_DIAMOND_MONSTER_3D << 10),
+                .size          = 0,
+                .flags         = BIOS_LIMIT_MAX_MEMORY | (2 << 8),
+                .files         = { "" }
+            },
+            {
+                .name          = "Obsidian SB50 + Amethyst (2 TMUs)",
+                .internal_name = "obsidian_sb50",
+                .bios_type     = BIOS_NORMAL,
+                .files_no      = -1,
+                .local         = VOODOO_SB50 | (VOODOO_GENERIC << 10),
+                .size          = 0,
+                .flags         = 0,
+                .files         = { "" }
+            },
+            {
+                .name          = "3Dfx Voodoo 2",
+                .internal_name = "voodoo_2",
+                .bios_type     = BIOS_NORMAL,
+                .files_no      = -1,
+                .local         = VOODOO_2 | (VOODOO_GENERIC << 10),
+                .size          = 0,
+                .flags         = BIOS_LIMIT_MIN_MEMORY | 4,
+                .files         = { "" }
+            },
+            {
+                .name          = "Diamond Monster 3D II",
+                .internal_name = "diamond_monster_3d_2",
+                .bios_type     = BIOS_NORMAL,
+                .files_no      = -1,
+                .local         = VOODOO_2 | (VOODOO_DIAMOND_MONSTER_3D_2 << 10),
+                .size          = 0,
+                .flags         = BIOS_LIMIT_MIN_MEMORY | 4,
+                .files         = { "" }
+            },
+            { .files_no = 0 }
         },
-        .bios           = { { 0 } }
     },
     {
         .name           = "framebuffer_memory",
@@ -1719,7 +1771,7 @@ static const device_config_t voodoo_config[] = {
 #ifndef NO_CODEGEN
     {
         .name           = "recompiler",
-        .description    = "Dynamic Recompiler",
+        .description    = "Dynamic recompiler",
         .type           = CONFIG_BINARY,
         .default_string = NULL,
         .default_int    = 1,
