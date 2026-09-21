@@ -22845,7 +22845,7 @@ const machine_t machines[] = {
             .max  = 786432,
             .step = 8192
         },
-        .nvrmask                  = 511,
+        .nvrmask                  = 255,
         .jumpered_ecp_dma         = 0,
         .default_jumpered_ecp_dma = -1,
         .kbc_device               = NULL,
@@ -22862,7 +22862,8 @@ const machine_t machines[] = {
         .fdc_device               = NULL,
         .vid_device               = NULL,
         .snd_device               = NULL,
-        .net_device               = NULL
+        .net_device               = NULL,
+        .aliases                  = { "" }
     },
     /* Has a National Semiconductor PC87307 Super I/O with on-chip KBC, which has one of these
        firmwares: AMI '5' MegaKey, Phoenix MultiKey/42 1.37, or Phoenix MultiKey/42i 4.16. */

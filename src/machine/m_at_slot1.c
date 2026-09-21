@@ -416,7 +416,7 @@ machine_at_acerv65x_init(const machine_t *model)
 
     pci_init(PCI_CONFIG_TYPE_1);
     pci_register_slot(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0);
-    pci_register_slot(0x07, PCI_CARD_SOUTHBRIDGE, 5, 0, 0, 4);
+    pci_register_slot(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 4);
     pci_register_slot(0x12, PCI_CARD_NORMAL,      4, 1, 2, 3);
     pci_register_slot(0x10, PCI_CARD_NORMAL,      3, 4, 1, 2);
     pci_register_slot(0x0E, PCI_CARD_NORMAL,      1, 2, 3, 4);
@@ -426,7 +426,8 @@ machine_at_acerv65x_init(const machine_t *model)
     device_add(&i440lx_device);
     device_add(&piix4_device);
     device_add_params(&fdc37c93x_device, (void *) (FDC37XXX5 | FDC37C93X_APM | FDC37C93X_NO_NVR));
-    device_add(&sst_flash_29ee020_device);
+    device_add(&intel_flash_bxt_device);
+    spd_register(SPD_TYPE_SDRAM, 0xF, 256);
 
     return ret;
 }
