@@ -408,13 +408,40 @@ static const device_config_t m5pe_config[] = {
         .selection      = { { 0 } },
         .bios           = {
             {
-                .name          = "PhoenixBIOS for Pentium",
+                .name          = "PhoenixBIOS for Pentium 1.00 - Revision M5PE-01",
+                .internal_name = "m5pe_01",
+                .bios_type     = BIOS_NORMAL,
+                .files_no      = 1,
+                .local         = 0,
+                .size          = 131072,
+                .files         = { "roms/machines/m5pe/M5PE_01.BIN", "" }
+            },
+            {
+                .name          = "PhoenixBIOS for Pentium 1.00 - Revision M5PE-03",
+                .internal_name = "m5pe_03",
+                .bios_type     = BIOS_NORMAL,
+                .files_no      = 1,
+                .local         = 0,
+                .size          = 131072,
+                .files         = { "roms/machines/m5pe/M5PE_03.BIN", "" }
+            },
+            {
+                .name          = "PhoenixBIOS for Pentium 1.00 - Revision M5PE-06",
                 .internal_name = "m5pe",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
                 .local         = 0,
                 .size          = 131072,
                 .files         = { "roms/machines/m5pe/M5PE_06.BIN", "" }
+            },
+            {
+                .name          = "PhoenixBIOS for Pentium 1.00 - Revision M5PE-T53 (IBM)",
+                .internal_name = "m5pe_t53",
+                .bios_type     = BIOS_NORMAL,
+                .files_no      = 1,
+                .local         = 0,
+                .size          = 131072,
+                .files         = { "roms/machines/m5pe/M5PE_T53.BIN", "" }
             },
             { .files_no = 0 }
         }
@@ -473,6 +500,8 @@ machine_at_m5pe_init(const machine_t *model)
     device_add_params(machine_get_kbc_device(machine), (void *) model->kbc_params);
     device_add_params(&fdc37c6xx_device, (void *) (FDC37C665 | FDC37C6XX_IDE_PRI));
     device_add(&intel_flash_bxt_device);
+
+    esc_set_board_id("MIC", 0x0005, 0);
 
     return ret;
 }

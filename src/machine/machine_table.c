@@ -14758,7 +14758,7 @@ const machine_t machines[] = {
         .jumpered_ecp_dma         = MACHINE_DMA_DISABLED | MACHINE_DMA_1 | MACHINE_DMA_3,
         .default_jumpered_ecp_dma = 3,
         .kbc_device               = &kbc_at_device,
-        .kbc_params               = KBC_VEN_PHOENIX | 0x00012900,    /* Guess. */
+        .kbc_params               = KBC_VEN_PHOENIX | 0x00012900, /* Guess. */
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
         .sio_device               = NULL,
@@ -14772,8 +14772,8 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
-        .ide_device               = NULL, /* &ide_w83769f_pci_single_channel_device, */
-        .aliases                  = { "" }
+        .ide_device               = NULL,
+        .aliases                  = { "IBM PC Server 300 (type 8640)", "" }
     },
     /* The M5Pi appears to have a Phoenix MultiKey KBC firmware according to photos. */
     {
@@ -14807,7 +14807,7 @@ const machine_t machines[] = {
         .jumpered_ecp_dma         = MACHINE_DMA_DISABLED | MACHINE_DMA_1 | MACHINE_DMA_3,
         .default_jumpered_ecp_dma = 3,
         .kbc_device               = &kbc_at_device,
-        .kbc_params               = KBC_VEN_PHOENIX | 0x00012900,    /* Guess. */
+        .kbc_params               = KBC_VEN_PHOENIX | 0x00012900, /* Guess. */
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
         .sio_device               = NULL,
