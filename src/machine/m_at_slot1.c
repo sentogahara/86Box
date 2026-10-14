@@ -1339,6 +1339,36 @@ machine_at_brio83xx_init(const machine_t *model)
     return ret;
 }
 
+int
+machine_at_vectravec7_init(const machine_t *model)
+{
+    int ret;
+
+    ret = bios_load_linear("roms/machines/vectravec7/HS0106.ROM",
+                           0x000c0000, 262144, 0);
+
+    if (bios_only || !ret)
+        return ret;
+
+    machine_at_common_init(model);
+
+    pci_init(PCI_CONFIG_TYPE_1);
+    pci_register_slot(0x00, PCI_CARD_NORTHBRIDGE, 1, 2, 3, 4);
+    pci_register_slot(0x01, PCI_CARD_AGPBRIDGE,   1, 2, 3, 4);
+    pci_register_slot(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4);
+    pci_register_slot(0x0F, PCI_CARD_NORMAL,      1, 2, 3, 4);
+    pci_register_slot(0x10, PCI_CARD_NORMAL,      2, 3, 4, 1);
+    pci_register_slot(0x12, PCI_CARD_NORMAL,      3, 4, 1, 2);
+
+    device_add(&i440ex_device);
+    device_add(&piix4_device);
+    device_add_params(&pc87309_device, (void *) (PCX730X_PHOENIX_42 | PC87309_PC87309));
+    device_add(&intel_flash_bxt_device);
+    spd_register(SPD_TYPE_SDRAM, 0x3, 256);
+
+    return ret;
+}
+
 static const device_config_t como_config[] = {
     // clang-format off
     {
