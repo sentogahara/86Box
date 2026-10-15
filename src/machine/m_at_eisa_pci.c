@@ -54,6 +54,7 @@
 #include <86box/keyboard.h>
 #include <86box/thread.h>
 #include <86box/network.h>
+#include <86box/spd.h>
 #include "cpu.h"
 
 static const device_config_t at_54tdp_config[] = {
@@ -388,6 +389,94 @@ machine_at_td3_init(const machine_t *model)
         esc_set_board_id("ING", 0x2920, 0);   
 
     device_add(machine_get_scsi_device(machine));
+
+    if ((net_cards_conf[0].device_num == NET_INTERNAL) && machine_get_net_device(machine))
+        device_add(machine_get_net_device(machine));
+
+    return ret;
+}
+
+static const device_config_t digital5100_config[] = {
+    // clang-format off
+    {
+        .name           = "bios",
+        .description    = "BIOS Version",
+        .type           = CONFIG_BIOS,
+        .default_string = "digital5100",
+        .default_int    = 0,
+        .file_filter    = NULL,
+        .spinner        = { 0 },
+        .selection      = { { 0 } },
+        .bios           = {
+            {
+                .name          = "PhoenixBIOS 4.05",
+                .internal_name = "digital5100",
+                .bios_type     = BIOS_NORMAL,
+                .files_no      = 1,
+                .local         = 0,
+                .size          = 262144,
+                .files         = { "roms/machines/digital5100/bios.rom", "" }
+            },
+            { .files_no = 0 }
+        }
+    },
+    { .name = "", .description = "", .type = CONFIG_END }
+    // clang-format on
+};
+
+const device_t digital5100_device = {
+    .name          = "DEC Digital Server 5100",
+    .internal_name = "digital5100_device",
+    .flags         = 0,
+    .local         = 0,
+    .init          = NULL,
+    .close         = NULL,
+    .reset         = NULL,
+    .available     = NULL,
+    .speed_changed = NULL,
+    .force_redraw  = NULL,
+    .config        = digital5100_config
+};
+
+int
+machine_at_digital5100_init(const machine_t *model)
+{
+    int         ret = 0;
+    const char *fn;
+
+    if (!device_available(model->device))
+        return ret;
+
+    device_context(model->device);
+    fn  = device_get_bios_file(machine_get_device(machine), device_get_config_bios("bios"), 0);
+    ret = bios_load_linear(fn, 0x000c0000, 262144, 0);
+    device_context_restore();
+
+    if (bios_only || !ret)
+        return ret;
+
+    machine_at_common_init(model);
+
+    pci_init(PCI_CONFIG_TYPE_2);
+    pci_register_slot(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0);
+    pci_register_slot(0x01, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0);
+    pci_register_slot(0x05, PCI_CARD_NORMAL,      1, 2, 3, 4);
+    pci_register_slot(0x08, PCI_CARD_NORMAL,      3, 4, 1, 2);
+    pci_register_slot(0x09, PCI_CARD_NORMAL,      2, 3, 4, 1);
+    pci_register_slot(0x06, PCI_CARD_SCSI,        4, 0, 0, 0);
+    pci_register_slot(0x07, PCI_CARD_NETWORK,     1, 0, 0, 0);
+
+    eisa_init(1);
+
+    device_add_params(machine_get_kbc_device(machine), (void *) model->kbc_params);
+
+    device_add(&i440fx_device);
+    device_add(&pceb_device);
+    device_add(&esc_device);
+    device_add_params(&fdc37c6xx_device, (void *) FDC37C665);
+    device_add(&intel_flash_bxt_device); 
+    device_add(machine_get_scsi_device(machine));
+    spd_register(SPD_TYPE_EDO, 0x7, 256);
 
     if ((net_cards_conf[0].device_num == NET_INTERNAL) && machine_get_net_device(machine))
         device_add(machine_get_net_device(machine));

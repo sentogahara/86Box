@@ -1414,6 +1414,10 @@ extern const device_t  p6kdi_device;
 extern int             machine_at_p6kdi_init(const machine_t *);
 extern int             machine_at_p65up5_cpknd_init(const machine_t *);
 extern int             machine_at_kn97_init(const machine_t *);
+#ifdef EMU_DEVICE_H
+extern const device_t  digital5100_device;
+#endif
+extern int             machine_at_digital5100_init(const machine_t *);
 extern int             machine_at_fickn6000_init(const machine_t *);
 extern int             machine_at_dualfortress_init(const machine_t *);
 
