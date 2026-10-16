@@ -80,15 +80,15 @@ static const device_config_t s2dge_config[] = {
         .name           = "bios",
         .description    = "BIOS Version",
         .type           = CONFIG_BIOS,
-        .default_string = "s2dge_rev16",
+        .default_string = "s2dge",
         .default_int    = 0,
         .file_filter    = NULL,
         .spinner        = { 0 },
         .selection      = { { 0 } },
         .bios           = {
             {
-                .name          = "AMIBIOS 6 (063100) - Revision 1.0",
-                .internal_name = "s2dge",
+                .name          = "AMIBIOS 6 (071595) - Revision 1.0",
+                .internal_name = "s2dge_10",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
                 .local         = 0,
@@ -96,8 +96,8 @@ static const device_config_t s2dge_config[] = {
                 .files         = { "roms/machines/s2dge/2gu7301.rom", "" }
             },
             {
-                .name          = "AMIBIOS 6 (063100) - Revision 1.6",
-                .internal_name = "s2dge_rev16",
+                .name          = "AMIBIOS 6 (071595) - Revision 1.6",
+                .internal_name = "s2dge",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
                 .local         = 0,

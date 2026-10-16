@@ -85,7 +85,7 @@ static const device_config_t aurora_config[] = {
         .selection      = { { 0 } },
         .bios           = {
             {
-                .name          = "Intel AMIBIOS - Revision 1.00.01.CG0Q (AST Bravo MS-T 6150)",
+                .name          = "AMIBIOS 111192 (Intel) - Revision 1.00.01.CG0Q (AST)",
                 .internal_name = "bravomst6150",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 5,
@@ -96,7 +96,7 @@ static const device_config_t aurora_config[] = {
                                    "roms/machines/aurora/1001CG0Q.RCV", "" }
             },
             {
-                .name          = "Intel AMIBIOS - Revision 1.00.01.CG0P (Compaq ProLinea 6___e)",
+                .name          = "AMIBIOS 111192 (Intel) - Revision 1.00.01.CG0P (Compaq)",
                 .internal_name = "prolinea6xxxe",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 5,
@@ -107,7 +107,7 @@ static const device_config_t aurora_config[] = {
                                    "roms/machines/aurora/1001CG0P.RCV", "" }
             },
             {
-                .name          = "Intel AMIBIOS - Revision 1.00.05.CG0T (Gateway MBDSAC02_A_WW)",
+                .name          = "AMIBIOS 111192 (Intel) - Revision 1.00.05.CG0T (Gateway)",
                 .internal_name = "aurora_gateway",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 5,
@@ -118,7 +118,7 @@ static const device_config_t aurora_config[] = {
                                    "roms/machines/aurora/1005CG0T.RCV", "" }
             },
             {
-                .name          = "Intel AMIBIOS - Revision 1.00.06.CG0",
+                .name          = "AMIBIOS 111192 (Intel) - Revision 1.00.06.CG0",
                 .internal_name = "aurora_06",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 5,
@@ -129,7 +129,7 @@ static const device_config_t aurora_config[] = {
                                    "roms/machines/aurora/1006CG0_.RCV", "" }
             },
             {
-                .name          = "Intel AMIBIOS - Revision 1.00.09.CG0",
+                .name          = "AMIBIOS 111192 (Intel) - Revision 1.00.09.CG0",
                 .internal_name = "aurora",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 5,
@@ -140,7 +140,7 @@ static const device_config_t aurora_config[] = {
                                    "roms/machines/aurora/1009CG0_.RCV", "" }
             },
             {
-                .name          = "Intel AMIBIOS - Revision A01 (Dell Dimension XPS Pro___)",
+                .name          = "AMIBIOS 111192 (Intel) - Revision A01 (Dell)",
                 .internal_name = "dimensionxpspro",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -149,7 +149,7 @@ static const device_config_t aurora_config[] = {
                 .files         = { "roms/machines/aurora/DELL.ROM", "" }
             },
             {
-                .name          = "Intel AMIBIOS - Revision LTKT16AUS [IBM PC 360 S___ (Type 6598)]",
+                .name          = "AMIBIOS 111192 (Intel) - Revision LTKT16AUS (IBM)",
                 .internal_name = "pc360_6598",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 5,
@@ -269,7 +269,7 @@ static const device_config_t ficpo6000_config[] = {
         .selection      = { { 0 } },
         .bios           = {
             {
-                .name          = "PhoenixBIOS 4.05 - Revision 405F03C (CD-ROM Boot support)",
+                .name          = "PhoenixBIOS 4.05 - Revision 405F03C (CD-ROM boot support)",
                 .internal_name = "405F03C",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -278,7 +278,7 @@ static const device_config_t ficpo6000_config[] = {
                 .files         = { "roms/machines/ficpo6000/405F03C.ROM", "" }
             },
             {
-                .name          = "PhoenixBIOS 4.05 - Revision 405F05C (No CD-ROM Boot support)",
+                .name          = "PhoenixBIOS 4.05 - Revision 405F05C (No CD-ROM boot support)",
                 .internal_name = "405F05C",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -511,7 +511,7 @@ static const device_config_t vs440fx_config[] = {
         .selection      = { { 0 } },
         .bios           = {
             {
-                .name          = "Intel AMIBIOS - Revision 1.00.02.CS1K (NEC)",
+                .name          = "AMIBIOS 111192 (Intel) - Revision 1.00.02.CS1K (NEC)",
                 .internal_name = "powermate17x0_02",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 5,
@@ -522,7 +522,7 @@ static const device_config_t vs440fx_config[] = {
                                    "roms/machines/vs440fx/1002cs1k.rcv", "" }
             },
             {
-                .name          = "Intel AMIBIOS - Revision 1.00.03.CS1K (NEC)",
+                .name          = "AMIBIOS 111192 (Intel) - Revision 1.00.03.CS1K (NEC)",
                 .internal_name = "powermate17x0",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 5,
@@ -533,7 +533,7 @@ static const device_config_t vs440fx_config[] = {
                                    "roms/machines/vs440fx/1003cs1k.rcv", "" }
             },
             {
-                .name          = "Intel AMIBIOS - Revision 1.00.05.CS1Q (AST)",
+                .name          = "AMIBIOS 111192 (Intel) - Revision 1.00.05.CS1Q (AST)",
                 .internal_name = "bravomst6200",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 5,
@@ -544,7 +544,7 @@ static const device_config_t vs440fx_config[] = {
                                    "roms/machines/vs440fx/1005CS1Q.RCV", "" }
             },
             {
-                .name          = "Intel AMIBIOS - Revision 1.00.06.CS1J (Dell)",
+                .name          = "AMIBIOS 111192 (Intel) - Revision 1.00.06.CS1J (Dell)",
                 .internal_name = "dellvenus",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 5,
@@ -555,7 +555,7 @@ static const device_config_t vs440fx_config[] = {
                                    "roms/machines/vs440fx/1006CS1J.RCV", "" }
             },
             {
-                .name          = "Intel AMIBIOS - Revision 1.00.07.CS15 (Micron)",
+                .name          = "AMIBIOS 111192 (Intel) - Revision 1.00.07.CS15 (Micron)",
                 .internal_name = "millenniapro1",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 5,
@@ -566,7 +566,7 @@ static const device_config_t vs440fx_config[] = {
                                    "roms/machines/vs440fx/1007cs15.rcv", "" }
             },
             {
-                .name          = "Intel AMIBIOS - Revision 1.00.11.CS1T (Gateway 2000)",
+                .name          = "AMIBIOS 111192 (Intel) - Revision 1.00.11.CS1T (Gateway 2000)",
                 .internal_name = "gw2kvenus",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 5,
@@ -577,7 +577,7 @@ static const device_config_t vs440fx_config[] = {
                                    "roms/machines/vs440fx/1011CS1T.RCV", "" }
             },
             {
-                .name          = "Intel AMIBIOS - Revision 1.00.18.CS1",
+                .name          = "AMIBIOS 111192 (Intel) - Revision 1.00.18.CS1",
                 .internal_name = "vs440fx",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 5,

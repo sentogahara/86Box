@@ -298,7 +298,7 @@ static const device_config_t vectra52_config[] = {
         .selection      = { { 0 } },
         .bios           = {
             {
-                .name          = "GU.07.02 (01/25/96)",
+                .name          = "PhoenixBIOS 4.05.K.00 (Beta) - Revision GU.07.02",
                 .internal_name = "vectra52_0702",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -307,7 +307,7 @@ static const device_config_t vectra52_config[] = {
                 .files         = { "roms/machines/vectra52/d3653.bin", "" }
             },
             {
-                .name          = "GU.07.05 (08/06/96)",
+                .name          = "PhoenixBIOS 4.05.Z - Revision GU.07.05",
                 .internal_name = "vectra52_0705",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -490,7 +490,7 @@ static const device_config_t thor_config[] = {
         .selection      = { { 0 } },
         .bios           = {
             {
-                .name          = "Intel AMIBIOS - Revision 1.00.03.CN0T (Gateway 2000)",
+                .name          = "AMIBIOS 111192 (Intel) - Revision 1.00.03.CN0T (Gateway 2000)",
                 .internal_name = "gw2katx",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 2,
@@ -499,7 +499,7 @@ static const device_config_t thor_config[] = {
                 .files         = { "roms/machines/thor/1003CN0T.BIO", "roms/machines/thor/1003CN0T.BI1", "" }
             },
             {
-                .name          = "Intel AMIBIOS - Revision 1.00.06.CN0",
+                .name          = "AMIBIOS 111192 (Intel) - Revision 1.00.06.CN0",
                 .internal_name = "thor",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 2,
@@ -773,7 +773,7 @@ static const device_config_t monaco_config[] = {
         .selection      = { { 0 } },
         .bios           = {
             {
-                .name          = "Intel AMIBIOS - Revision 1.00.07.BU0",
+                .name          = "AMIBIOS 111192 (Intel) - Revision 1.00.07.BU0",
                 .internal_name = "monaco",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 2,
@@ -782,7 +782,7 @@ static const device_config_t monaco_config[] = {
                 .files         = { "roms/machines/monaco/1007BU0_.BIO", "roms/machines/monaco/1007BU0_.BI1", "" }
             },
             {
-                .name          = "Intel AMIBIOS - Revision 1.00.12.BU0Q (AST Bravo MS-T)",
+                .name          = "AMIBIOS 111192 (Intel) - Revision 1.00.12.BU0Q (AST Bravo MS-T)",
                 .internal_name = "bravomst",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 2,
@@ -1754,7 +1754,7 @@ static const device_config_t ms5124_config[] = {
         .selection      = { { 0 } },
         .bios           = {
             {
-                .name          = "AMI WinBIOS (101094) - Revision AG77",
+                .name          = "AMIBIOS 4 (101094) - Revision AG77",
                 .internal_name = "ms5124",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,

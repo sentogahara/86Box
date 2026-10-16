@@ -777,7 +777,7 @@ static const device_config_t sb486pv_config[] = {
         .selection      = { { 0 } },
         .bios           = {
             {
-                .name          = "AMI WinBIOS (062594) - Revision 0108",
+                .name          = "AMIBIOS 4 (062594) - Revision 0108",
                 .internal_name = "sb486pv_0108",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -786,7 +786,7 @@ static const device_config_t sb486pv_config[] = {
                 .files         = { "roms/machines/sb486pv/41-0108-062594-SATURN2.rom", "" }
             },
             {
-                .name          = "AMI WinBIOS (062594) - Revision 0301",
+                .name          = "AMIBIOS 4 (062594) - Revision 0301",
                 .internal_name = "sb486pv_0301",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -890,7 +890,7 @@ static const device_config_t pci400cb_config[] = {
                 .files         = { "roms/machines/pci400cb/080394.ROM", "" }
             },
             {
-                .name          = "AMI WinBIOS (061594) - Revision 03/21/95",
+                .name          = "AMIBIOS 4 (061594) - Revision 03/21/95",
                 .internal_name = "pci400cb",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -1079,7 +1079,7 @@ static const device_config_t m4li_config[] = {
                 .files         = { "roms/machines/m4li/M4LI.04S", "" }
             },
             {
-                .name          = "PhoenixBIOS 4.04 - Revision M4LI-05PM (Micron OEM)",
+                .name          = "PhoenixBIOS 4.04 - Revision M4LI-05PM (Micron)",
                 .internal_name = "m4limc",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -1232,7 +1232,7 @@ static const device_config_t zida4dps_config[] = {
         .selection      = { { 0 } },
         .bios           = {
             {
-                .name          = "AwardBIOS v4.50G - Revision 09/21/95 (Taken/J-Bond OEM)",
+                .name          = "AwardBIOS v4.50G - Revision 09/21/95 (Taken/J-Bond)",
                 .internal_name = "4dps_0995tjb",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -1259,7 +1259,7 @@ static const device_config_t zida4dps_config[] = {
                 .files         = { "roms/machines/4dps/4dps_160.bin", "" }
             },
             {
-                .name          = "AwardBIOS v4.50G - Revision 01/10/96 (Taken/J-Bond OEM)",
+                .name          = "AwardBIOS v4.50G - Revision 01/10/96 (Taken/J-Bond)",
                 .internal_name = "4dps_0196tjb",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -1286,7 +1286,7 @@ static const device_config_t zida4dps_config[] = {
                 .files         = { "roms/machines/4dps/4dps-v10.awa", "" }
             },
             {
-                .name          = "AwardBIOS v4.51G - Revision 10/07/96 (Taken/J-Bond OEM)",
+                .name          = "AwardBIOS v4.51G - Revision 10/07/96 (Taken/J-Bond)",
                 .internal_name = "4dps_1096tjb",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -1304,7 +1304,7 @@ static const device_config_t zida4dps_config[] = {
                 .files         = { "roms/machines/4dps/4DPS_171.BIN", "" }
             },
             {
-                .name          = "AwardBIOS v4.51PG - Revision 1.72F (Funworld OEM)",
+                .name          = "AwardBIOS v4.51PG - Revision 1.72F (Funworld)",
                 .internal_name = "4dps_172f",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -1313,7 +1313,7 @@ static const device_config_t zida4dps_config[] = {
                 .files         = { "roms/machines/4dps/4DPS172G.BIN", "" }
             },
             {
-                .name          = "AwardBIOS v4.51PG - Revision 4.00A (patched)",
+                .name          = "AwardBIOS v4.51PG - Revision 4.00A (Patched)",
                 .internal_name = "4dps",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,

@@ -53,7 +53,7 @@ static const device_config_t v12p_config[] = {
         .selection      = { { 0 } },
         .bios           = {
             {
-                .name          = "Acer BIOS V1.2 - Revision R1.4",
+                .name          = "Acer BIOS V1.2 - Revision 1.4",
                 .internal_name = "v12p_r14",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -62,7 +62,7 @@ static const device_config_t v12p_config[] = {
                 .files         = { "roms/machines/v12p/v12p_14.bin", "" }
             },
             {
-                .name          = "Acer BIOS V1.2 - Revision R1.6",
+                .name          = "Acer BIOS V1.2 - Revision 1.6",
                 .internal_name = "v12p",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -364,7 +364,7 @@ static const device_config_t batman_config[] = {
         .selection      = { { 0 } },
         .bios           = {
             {
-                .name          = "AMIBIOS 111192 - Revision A08 (Dell Dimension XPS P60)",
+                .name          = "AMIBIOS 111192 - Revision A08 (Dell)",
                 .internal_name = "dellxp60",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -373,7 +373,7 @@ static const device_config_t batman_config[] = {
                 .files         = { "roms/machines/batman/XP60-A08.ROM", "" }
             },
             {
-                .name          = "Intel AMIBIOS - Revision 1.00.04.AF1P (AMBRA DP60 PCI)",
+                .name          = "AMIBIOS 111192 (Intel) - Revision 1.00.04.AF1P (Ambra)",
                 .internal_name = "ambradp60",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 2,
@@ -382,7 +382,7 @@ static const device_config_t batman_config[] = {
                 .files         = { "roms/machines/batman/1004AF1P.BIO", "roms/machines/batman/1004AF1P.BI1", "" }
             },
             {
-                .name          = "Intel AMIBIOS - Revision 1.00.08.AF1",
+                .name          = "AMIBIOS 111192 (Intel) - Revision 1.00.08.AF1",
                 .internal_name = "batman",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 2,

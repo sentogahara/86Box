@@ -594,7 +594,7 @@ static const device_config_t delhi3_config[] = {
                 .files         = { "roms/machines/delhi3/DELHI3_nonoem.ROM", "" }
             },
             {
-                .name          = "AMIBIOS 6 (071595) - Revision 1.20 (eMachines eTower 3__k)",
+                .name          = "AMIBIOS 6 (071595) - Revision 1.20 (eMachines)",
                 .internal_name = "delhi3",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -1012,7 +1012,7 @@ static const device_config_t ga5smm_config[] = {
                 .files         = { "roms/machines/5smm/5SMM.10", "" }
             },
             {
-                .name          = "AwardBIOS v4.51PG - Revision 1.2b (Compaq OEM)",
+                .name          = "AwardBIOS v4.51PG - Revision 1.2b (Compaq)",
                 .internal_name = "5smm_12bcq",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,

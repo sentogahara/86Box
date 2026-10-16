@@ -223,7 +223,7 @@ static const device_config_t cu430hx_config[] = {
         .selection      = { { 0 } },
         .bios           = {
             {
-                .name          = "Intel AMIBIOS - Revision 1.00.03.DK08 (Toshiba Equium 5xx0D)",
+                .name          = "AMIBIOS 111192 (Intel) - Revision 1.00.03.DK08 (Toshiba)",
                 .internal_name = "equium5200",
                 .bios_type     = BIOS_NORMAL, 
                 .files_no      = 5,
@@ -233,7 +233,7 @@ static const device_config_t cu430hx_config[] = {
                                    "roms/machines/cu430hx/1003DK08.BI2", "roms/machines/cu430hx/1003DK08.BI3",
                                    "roms/machines/cu430hx/1003DK08.RCV", "" } },
             {
-                .name          = "Intel AMIBIOS - Revision 1.00.04.DK0K (NEC PowerMate V2xxx/P2xxx)",
+                .name          = "AMIBIOS 111192 (Intel) - Revision 1.00.04.DK0K (NEC)",
                 .internal_name = "powermatev2p2",
                 .bios_type     = BIOS_NORMAL, 
                 .files_no      = 5,
@@ -244,7 +244,7 @@ static const device_config_t cu430hx_config[] = {
                                    "roms/machines/cu430hx/1004DK0K.RCV", "" }
             },
             {
-                .name          = "Intel AMIBIOS - Revision 1.00.06.DK0",
+                .name          = "AMIBIOS 111192 (Intel) - Revision 1.00.06.DK0",
                 .internal_name = "cu430hx",
                 .bios_type     = BIOS_NORMAL, 
                 .files_no      = 5,
@@ -362,7 +362,7 @@ static const device_config_t tc430hx_config[] = {
         .selection      = { { 0 } },
         .bios           = {
             {
-                .name          = "Intel AMIBIOS - Revision 1.00.02.DH05 (Micron Millennia LXA/ClientPro MTA)",
+                .name          = "AMIBIOS 111192 (Intel) - Revision 1.00.02.DH05 (Micron)",
                 .internal_name = "millennialxa",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 5,
@@ -373,7 +373,7 @@ static const device_config_t tc430hx_config[] = {
                                    "roms/machines/tc430hx/1002DH05.RCV", "" }
             },
             {
-                .name          = "Intel AMIBIOS - Revision 1.00.07.DH0",
+                .name          = "AMIBIOS 111192 (Intel) - Revision 1.00.07.DH0",
                 .internal_name = "tc430hx",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 5,
@@ -384,7 +384,7 @@ static const device_config_t tc430hx_config[] = {
                                    "roms/machines/tc430hx/1007DH0_.RCV", "" }
             },
             {
-                .name          = "Intel AMIBIOS - Revision 1.00.08.DH08 (Toshiba Infinia 7xx1)",
+                .name          = "AMIBIOS 111192 (Intel) - Revision 1.00.08.DH08 (Toshiba)",
                 .internal_name = "infinia7200",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 5,
@@ -501,7 +501,7 @@ static const device_config_t m7shi_config[] = {
         .selection      = { { 0 } },
         .bios           = {
             {
-                .name          = "PhoenixBIOS 4.0 Release 6.0 - Revision 05/20/97",
+                .name          = "PhoenixBIOS 4.0 Rel. 6.0 - Revision 05/20/97",
                 .internal_name = "m7shi_97",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -510,7 +510,7 @@ static const device_config_t m7shi_config[] = {
                 .files         = { "roms/machines/m7shi/m7shi2n.rom", "" }
             },
             {
-                .name          = "PhoenixBIOS 4.0 Release 6.0 - Revision 01/21/98",
+                .name          = "PhoenixBIOS 4.0 Rel. 6.0 - Revision 01/21/98",
                 .internal_name = "m7shi",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -1209,7 +1209,7 @@ static const device_config_t pb810_config[] = {
         .selection      = { { 0 } },
         .bios           = {
             {
-                .name          = "AwardBIOS v4.51PG - Revision 3.00 (AST Bravo EL)",
+                .name          = "AwardBIOS v4.51PG - Revision 3.00 (AST)",
                 .internal_name = "pb810_ast300",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -1218,7 +1218,7 @@ static const device_config_t pb810_config[] = {
                 .files         = { "roms/machines/pb810/JEWEL.BIN", "" }
             },
             {
-                .name          = "AwardBIOS v4.51PG - Revision 3.03 (AST Bravo EL)",
+                .name          = "AwardBIOS v4.51PG - Revision 3.03 (AST)",
                 .internal_name = "pb810_ast",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -1227,7 +1227,7 @@ static const device_config_t pb810_config[] = {
                 .files         = { "roms/machines/pb810/2a59gjew.bin", "" }
             },
             {
-                .name          = "AwardBIOS v4.51PG - Revision 1.25I (Packard Bell PB810)",
+                .name          = "AwardBIOS v4.51PG - Revision 1.25I (Packard Bell)",
                 .internal_name = "pb810",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -1992,7 +1992,7 @@ static const device_config_t an430tx_config[] = {
         .selection      = { { 0 } },
         .bios           = {
             {
-                .name          = "PhoenixBIOS 4.0 Release 6.0 - Revision P02-0011 (Sony Vaio PCV-130/150)",
+                .name          = "PhoenixBIOS 4.0 Rel. 6.0 - Revision P02-0011 (Sony)",
                 .internal_name = "pcv150",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 5,
@@ -2003,7 +2003,7 @@ static const device_config_t an430tx_config[] = {
                                    "roms/machines/an430tx/P02-0011.RCV", "" }
             },
             {
-                .name          = "PhoenixBIOS 4.0 Release 6.0 - Revision P07-0024 (Micron Millennia MME)",
+                .name          = "PhoenixBIOS 4.0 Rel. 6.0 - Revision P07-0024 (Micron)",
                 .internal_name = "millenniamme",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 5,
@@ -2014,7 +2014,7 @@ static const device_config_t an430tx_config[] = {
                                    "roms/machines/an430tx/P07-0024.RCV", "" }
             },
             {
-                .name          = "PhoenixBIOS 4.0 Release 6.0 - Revision P09-0006 (Packard Bell PB79x)",
+                .name          = "PhoenixBIOS 4.0 Rel. 6.0 - Revision P09-0006 (Packard Bell)",
                 .internal_name = "pb79x",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 5,
@@ -2025,7 +2025,7 @@ static const device_config_t an430tx_config[] = {
                                    "roms/machines/an430tx/ANP0911A.RCV", "" }
             },
             {
-                .name          = "PhoenixBIOS 4.0 Release 6.0 - Revision P10-0095",
+                .name          = "PhoenixBIOS 4.0 Rel. 6.0 - Revision P10-0095",
                 .internal_name = "an430tx",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 5,

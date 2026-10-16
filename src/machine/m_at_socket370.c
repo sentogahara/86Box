@@ -201,7 +201,7 @@ static const device_config_t em440_config[] = {
         .selection      = { { 0 } },
         .bios           = {
             {
-                .name          = "PhoenixBIOS 4.0 Release 6.0 - Revision 1.03B",
+                .name          = "PhoenixBIOS 4.0 Rel. 6.0 - Revision 1.03B",
                 .internal_name = "em440_103b",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -210,7 +210,7 @@ static const device_config_t em440_config[] = {
                 .files         = { "roms/machines/em440/BIOS512K.ROM", "" }
             },
             {
-                .name          = "PhoenixBIOS 4.0 Release 6.0 - Revision 1.04A",
+                .name          = "PhoenixBIOS 4.0 Rel. 6.0 - Revision 1.04A",
                 .internal_name = "em440",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -646,7 +646,7 @@ static const device_config_t ms6318_config[] = {
                 .files         = { "roms/machines/ms6318/w6318vms.120", "" }
             },
             {
-                .name          = "AwardBIOS v6.00PG - Revision 1.8 (HP Pavilion A7xx)",
+                .name          = "AwardBIOS v6.00PG - Revision 1.8 (HP)",
                 .internal_name = "ms6318_180",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -655,7 +655,7 @@ static const device_config_t ms6318_config[] = {
                 .files         = { "roms/machines/ms6318/med2000v2.bin", "" }
             },
             {
-                .name          = "AwardBIOS v6.00PG - Revision 1.9 (HP Pavilion A8xx)",
+                .name          = "AwardBIOS v6.00PG - Revision 1.9 (HP)",
                 .internal_name = "ms6318_190",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -664,7 +664,7 @@ static const device_config_t ms6318_config[] = {
                 .files         = { "roms/machines/ms6318/med2000.bin", "" }
             },
             {
-                .name          = "AwardBIOS v6.00PG - Revision 2.02 (HP Medion 2000A)",
+                .name          = "AwardBIOS v6.00PG - Revision 2.02 (HP)",
                 .internal_name = "ms6318_202",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -673,7 +673,7 @@ static const device_config_t ms6318_config[] = {
                 .files         = { "roms/machines/ms6318/ms6318hp.bin", "" }
             },
             {
-                .name          = "AwardBIOS v6.00PG - Revision 1.3 (Medion MED 2000)",
+                .name          = "AwardBIOS v6.00PG - Revision 1.3 (Medion)",
                 .internal_name = "ms6318_130",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,

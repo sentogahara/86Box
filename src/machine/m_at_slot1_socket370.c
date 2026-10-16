@@ -179,7 +179,7 @@ static const device_config_t prosignias31x_config[] = {
                 .files         = { "roms/machines/prosignias31x_bx/bxt53s.BIN", "" }
             },
             {
-                .name          = "AwardBIOS v4.51PG - Revision 5.5 (Compaq ProSignia/Deskpro 440BX)",
+                .name          = "AwardBIOS v4.51PG - Revision 5.5 (Compaq)",
                 .internal_name = "prosignias31x_bx",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,

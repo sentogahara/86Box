@@ -368,7 +368,7 @@ static const device_config_t pc900_config[] = {
         .spinner        = { 0 },
         .bios           = {
             {
-                .name           = "AwardBIOS - Revision V2.07A (Commodore)",
+                .name           = "AwardBIOS V2.07A (Commodore)",
                 .internal_name  = "pc900",
                 .bios_type      = BIOS_NORMAL,
                 .files_no       = 1,
@@ -377,7 +377,7 @@ static const device_config_t pc900_config[] = {
                 .files          = { "roms/machines/pc900/mpf_pc900_v207a.bin", "" }
             },
             {
-                .name           = "AwardBIOS - Revision V2.07A.XC (Commodore)",
+                .name           = "AwardBIOS V2.07A.XC (Commodore)",
                 .internal_name  = "pc900_v207a_xc",
                 .bios_type      = BIOS_NORMAL,
                 .files_no       = 1,
@@ -386,7 +386,7 @@ static const device_config_t pc900_config[] = {
                 .files          = { "roms/machines/pc900/cbm_pc40_v207a_xc.bin", "" }
             },
             {
-                .name           = "AwardBIOS - Revision V2.07B",
+                .name           = "AwardBIOS V2.07B",
                 .internal_name  = "pc900_v207b",
                 .bios_type      = BIOS_NORMAL,
                 .files_no       = 1,
@@ -395,7 +395,7 @@ static const device_config_t pc900_config[] = {
                 .files          = { "roms/machines/pc900/mpf_pc900_v207b.bin", "" }
             },
             {
-                .name           = "AwardBIOS - Revision V3.01B",
+                .name           = "AwardBIOS V3.01B",
                 .internal_name  = "pc900_v301b",
                 .bios_type      = BIOS_NORMAL,
                 .files_no       = 1,

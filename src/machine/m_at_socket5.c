@@ -103,7 +103,7 @@ static const device_config_t plato_config[] = {
         .selection      = { { 0 } },
         .bios           = {
             {
-                .name          = "Intel AMIBIOS - Revision 1.00.02.AX1P (AMBRA DP90 PCI)",
+                .name          = "AMIBIOS 111192 (Intel) - Revision 1.00.02.AX1P (Ambra)",
                 .internal_name = "ambradp90",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 2,
@@ -112,7 +112,7 @@ static const device_config_t plato_config[] = {
                 .files         = { "roms/machines/plato/1002AX1P.BIO", "roms/machines/plato/1002AX1P.BI1", "" }
             },
             {
-                .name          = "Intel AMIBIOS - Revision 1.00.16.AX1",
+                .name          = "AMIBIOS 111192 (Intel) - Revision 1.00.16.AX1",
                 .internal_name = "plato",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 2,
@@ -121,7 +121,7 @@ static const device_config_t plato_config[] = {
                 .files         = { "roms/machines/plato/1016ax1_.bio", "roms/machines/plato/1016ax1_.bi1", "" }
             },
             {
-                .name          = "Intel AMIBIOS - Revision 1.00.16.AX1J (Dell Dimension XPS P___)",
+                .name          = "AMIBIOS 111192 (Intel) - Revision 1.00.16.AX1J (Dell)",
                 .internal_name = "dellplato",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 2,
@@ -718,7 +718,7 @@ static const device_config_t zappa_config[] = {
         .selection      = { { 0 } },
         .bios           = {
             {
-                .name          = "Intel AMIBIOS - Revision 1.00.06.BS0",
+                .name          = "AMIBIOS 111192 (Intel) - Revision 1.00.06.BS0",
                 .internal_name = "zappa",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 2,
@@ -727,7 +727,7 @@ static const device_config_t zappa_config[] = {
                 .files         = { "roms/machines/zappa/1006bs0_.bio", "roms/machines/zappa/1006bs0_.bi1", "" }
             },
             {
-                .name          = "Intel AMIBIOS - Revision 1.00.11.BS0T (Gateway 2000)",
+                .name          = "AMIBIOS 111192 (Intel) - Revision 1.00.11.BS0T (Gateway 2000)",
                 .internal_name = "zappa_gw2k",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 2,
@@ -802,7 +802,7 @@ static const device_config_t powermatev_config[] = {
         .selection      = { { 0 } },
         .bios           = {
             {
-                .name          = "PhoenixBIOS Version 4.05.M - Revision 00.04.08",
+                .name          = "PhoenixBIOS 4.05.M - Revision 00.04.08",
                 .internal_name = "powermatev_122195",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -811,7 +811,7 @@ static const device_config_t powermatev_config[] = {
                 .files         = { "roms/machines/powermatev/B50NM00M.ROM", "" }
             },
             {
-                .name          = "PhoenixBIOS Version 4.05.V - Revision 00.04.15",
+                .name          = "PhoenixBIOS 4.05.V - Revision 00.04.15",
                 .internal_name = "powermatev",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -1400,7 +1400,7 @@ static const device_config_t bravoms586_config[] = {
         .selection      = { { 0 } },
         .bios           = {
             {
-                .name          = "Award AST BIOS - Revision 1.03 (November 1994)",
+                .name          = "AST BIOS - Revision 1.03",
                 .internal_name = "bravoms586_103",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -1409,7 +1409,7 @@ static const device_config_t bravoms586_config[] = {
                 .files         = { "roms/machines/bravoms586/asttest.bin", "" }
             },
             {
-                .name          = "Award AST BIOS - Revision 2.02 (December 1995)",
+                .name          = "AST BIOS - Revision 2.02",
                 .internal_name = "bravoms586",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -1502,7 +1502,7 @@ static const device_config_t m54si_config[] = {
                 .files         = { "roms/machines/m54si/M54SI.03", "" }
             },
             {
-                .name          = "PhoenixBIOS 4.04 - Revision M54Si-09pm (Micron OEM)",
+                .name          = "PhoenixBIOS 4.04 - Revision M54Si-09pm (Micron)",
                 .internal_name = "diablo",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,

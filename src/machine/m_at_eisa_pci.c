@@ -170,48 +170,6 @@ machine_at_54tdp_init(const machine_t *model)
     return ret;
 }
 
-static const device_config_t d823_config[] = {
-    // clang-format off
-    {
-        .name           = "bios",
-        .description    = "BIOS Version",
-        .type           = CONFIG_BIOS,
-        .default_string = "d823_112",
-        .default_int    = 0,
-        .file_filter    = NULL,
-        .spinner        = { 0 },
-        .selection      = { { 0 } },
-        .bios           = {
-            {
-                .name          = "PhoenixBIOS 4.0 - Revision 1.12.823",
-                .internal_name = "d823_112",
-                .bios_type     = BIOS_NORMAL,
-                .files_no      = 1,
-                .local         = 0,
-                .size          = 131072,
-                .files         = { "roms/machines/d823/d823_112.bin", "" }
-            },
-            { .files_no = 0 }
-        }
-    },
-    { .name = "", .description = "", .type = CONFIG_END }
-    // clang-format on
-};
-
-const device_t d823_device = {
-    .name          = "Siemens-Nixdorf D823",
-    .internal_name = "d823_device",
-    .flags         = 0,
-    .local         = 0,
-    .init          = NULL,
-    .close         = NULL,
-    .reset         = NULL,
-    .available     = NULL,
-    .speed_changed = NULL,
-    .force_redraw  = NULL,
-    .config        = d823_config
-};
-
 /* The Siemens-Nixdorf D823: a 430NX board with the PCEB and ESC, two
    Socket 5s, four EISA slots, three PCI and one ISA, and a PC Technology
    RZ1000 for its IDE. Everything below is what the technical manual
@@ -230,19 +188,14 @@ const device_t d823_device = {
      purpose chip select 0 at 0C90h, where the board's switch block S500
      answers: bit 0 of 0C91h is switch 1, recovery mode, and an open
      switch reads as one. */
+
 int
 machine_at_d823_init(const machine_t *model)
 {
-    int         ret = 0;
-    const char *fn;
+    int ret;
 
-    if (!device_available(model->device))
-        return ret;
-
-    device_context(model->device);
-    fn  = device_get_bios_file(machine_get_device(machine), device_get_config_bios("bios"), 0);
-    ret = bios_load_linear(fn, 0x000e0000, 131072, 0);
-    device_context_restore();
+    ret = bios_load_linear("roms/machines/d823/d823_112.bin",
+                           0x000e0000, 131072, 0);
 
     if (bios_only || !ret)
         return ret;
@@ -301,7 +254,7 @@ static const device_config_t td3_config[] = {
         .selection      = { { 0 } },
         .bios           = {
             {
-                .name          = "AMI WinBIOS (081594) - Revision 5890G",
+                .name          = "AMIBIOS 4 (081594) - Revision 5890G",
                 .internal_name = "td3_g",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -310,7 +263,7 @@ static const device_config_t td3_config[] = {
                 .files         = { "roms/machines/td3/5890G.ROM", "" }
             },
             {
-                .name          = "AMI WinBIOS (081594) - Revision 5890H",
+                .name          = "AMIBIOS 4 (081594) - Revision 5890H",
                 .internal_name = "td3",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,

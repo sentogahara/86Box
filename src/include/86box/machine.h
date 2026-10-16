@@ -1186,6 +1186,9 @@ extern int             machine_at_zeoswildcat_init(const machine_t *);
 
 /* m_at_eisa_pci.c */
 /* i430HX */
+#ifdef EMU_DEVICE_H
+extern const device_t  at_54tdp_device;
+#endif
 extern int             machine_at_54tdp_init(const machine_t *);
 extern int             machine_at_d823_init(const machine_t *);
 #ifdef EMU_DEVICE_H
@@ -1715,8 +1718,6 @@ extern int             machine_v86p_init(const machine_t *);
 /* 8088 */
 #ifdef EMU_DEVICE_H
 extern const device_t  ibmpc_device;
-extern const device_t  at_54tdp_device;
-extern const device_t  d823_device;
 #endif
 extern int             machine_ibmpc_init(const machine_t *);
 #ifdef EMU_DEVICE_H

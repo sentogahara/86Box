@@ -15667,7 +15667,7 @@ const machine_t machines[] = {
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
-        .device                   = &d823_device,
+        .device                   = NULL,
         .kbd_device               = NULL,
         .fdc_device               = NULL,
         .vid_device               = NULL,
@@ -24888,7 +24888,7 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = &es1371_onboard_device,
         .net_device               = NULL,
-        .aliases                  = { "Tulip Vision Line TP90", "Tyan S1846", "" }
+        .aliases                  = { "Tulip Computers Vision Line TP90", "Tyan S1846", "" }
     },
 
     /* 440ZX */
@@ -25337,7 +25337,7 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = &es1373_onboard_device,
         .net_device               = NULL,
-        .aliases                  = { "Packard Bell Phoenix", "Compaq ProSignia 693A", "Compaq Deskpro 693A", "" }
+        .aliases                  = { "Compaq EX/EY/EZ", "Compaq Prosignia S316", "Compaq Prosignia S318", "Packard Bell Phoenix", "" }
     },
 
     /* VIA Apollo Pro 133A */
@@ -25593,7 +25593,7 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = &cmi8738_onboard_device,
         .net_device               = NULL,
-        .aliases                  = { "Compaq ProSignia 440BX", "Compaq Deskpro 440BX", "" }
+        .aliases                  = { "Compaq EX/EY/EZ", "Compaq Prosignia S316", "Compaq Prosignia S318", "" }
     },
     /* Has a Winbond W83977EF Super I/O chip with on-chip KBC with AMIKey-2 KBC
        firmware. */

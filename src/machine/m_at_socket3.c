@@ -255,7 +255,7 @@ static const device_config_t j403tg_config[] = {
         .selection      = { { 0 } },
         .bios           = {
             {
-                .name          = "AMI WinBIOS (121593)",
+                .name          = "AMIBIOS 4 (121593) - Revision 1.1",
                 .internal_name = "403tg",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -264,7 +264,7 @@ static const device_config_t j403tg_config[] = {
                 .files         = { "roms/machines/403tg/J403TGRevD.BIN", "" }
             },
             {
-                .name          = "AwardBIOS v4.50G",
+                .name          = "AwardBIOS v4.50G - Revision 1.A",
                 .internal_name = "403tg_award",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,

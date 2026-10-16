@@ -472,7 +472,7 @@ static const device_config_t bravomst6233_config[] = {
         .selection      = { { 0 } },
         .bios           = {
             {
-                .name          = "PhoenixBIOS 4.0 Release 6.0 - Revision 07C",
+                .name          = "PhoenixBIOS 4.0 Rel. 6.0 - Revision 07C",
                 .internal_name = "bravomst6233_07c",
                 .bios_type     = BIOS_NORMAL, 
                 .files_no      = 1,
@@ -481,7 +481,7 @@ static const device_config_t bravomst6233_config[] = {
                 .files         = { "roms/machines/bravomst6233/ast440lx.bin", "" }
             },
             {
-                .name          = "PhoenixBIOS 4.0 Release 6.0 - Revision 11C",
+                .name          = "PhoenixBIOS 4.0 Rel. 6.0 - Revision 11C",
                 .internal_name = "bravomst6233_11c",
                 .bios_type     = BIOS_NORMAL, 
                 .files_no      = 1,
@@ -490,7 +490,7 @@ static const device_config_t bravomst6233_config[] = {
                 .files         = { "roms/machines/bravomst6233/NORTONTR.11C", "" }
             },
             {
-                .name          = "PhoenixBIOS 4.0 Release 6.0 - Revision 13C",
+                .name          = "PhoenixBIOS 4.0 Rel. 6.0 - Revision 13C",
                 .internal_name = "bravomst6233_13c",
                 .bios_type     = BIOS_NORMAL, 
                 .files_no      = 1,
@@ -499,7 +499,7 @@ static const device_config_t bravomst6233_config[] = {
                 .files         = { "roms/machines/bravomst6233/NORTONTR.13C", "" }
             },
             {
-                .name          = "PhoenixBIOS 4.0 Release 6.0 - Revision 15C",
+                .name          = "PhoenixBIOS 4.0 Rel. 6.0 - Revision 15C",
                 .internal_name = "bravomst6233",
                 .bios_type     = BIOS_NORMAL, 
                 .files_no      = 1,
@@ -622,7 +622,7 @@ static const device_config_t al440lx_config[] = {
         .selection      = { { 0 } },
         .bios           = {
             {
-                .name          = "PhoenixBIOS 4.0 Release 6.0 - Revision P04-0014",
+                .name          = "PhoenixBIOS 4.0 Rel. 6.0 - Revision P04-0014",
                 .internal_name = "al440lx_p04",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 5,
@@ -633,7 +633,7 @@ static const device_config_t al440lx_config[] = {
                                    "roms/machines/al440lx/P04-0014.RCV", "" }
             },
             {
-                .name          = "PhoenixBIOS 4.0 Release 6.0 - Revision P07-0009 (Packard Bell PB80x)",
+                .name          = "PhoenixBIOS 4.0 Rel. 6.0 - Revision P07-0009 (Packard Bell)",
                 .internal_name = "pb800",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 5,
@@ -644,7 +644,7 @@ static const device_config_t al440lx_config[] = {
                                    "roms/machines/al440lx/ALP0711A.RCV", "" }
             },
             {
-                .name          = "PhoenixBIOS 4.0 Release 6.0 - Revision P07-0016 (Sony Vaio PCV-2xx)",
+                .name          = "PhoenixBIOS 4.0 Rel. 6.0 - Revision P07-0016 (Sony)",
                 .internal_name = "pcv2xx",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 5,
@@ -655,7 +655,7 @@ static const device_config_t al440lx_config[] = {
                                    "roms/machines/al440lx/P07-0024.RCV", "" }
             },
             {
-                .name          = "PhoenixBIOS 4.0 Release 6.0 - Revision P07-0024 (HP Pavilion 8190US)",
+                .name          = "PhoenixBIOS 4.0 Rel. 6.0 - Revision P07-0024 (HP)",
                 .internal_name = "pavilion8190us",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 5,
@@ -666,7 +666,7 @@ static const device_config_t al440lx_config[] = {
                                    "roms/machines/al440lx/P07-0024.RCV", "" }
             },
             {
-                .name          = "PhoenixBIOS 4.0 Release 6.0 - Revision P11-0019 (Micron ClientPro 766XI)",
+                .name          = "PhoenixBIOS 4.0 Rel. 6.0 - Revision P11-0019 (Micron)",
                 .internal_name = "clpro766xi",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 5,
@@ -677,7 +677,7 @@ static const device_config_t al440lx_config[] = {
                                    "roms/machines/al440lx/P11-0019.RCV", "" }
             },
             {
-                .name          = "PhoenixBIOS 4.0 Release 6.0 - Revision P14-0031",
+                .name          = "PhoenixBIOS 4.0 Rel. 6.0 - Revision P14-0031",
                 .internal_name = "al440lx",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 5,
@@ -688,7 +688,7 @@ static const device_config_t al440lx_config[] = {
                                    "roms/machines/al440lx/P14-0031.RCV", "" }
             },
             {
-                .name          = "PhoenixBIOS 4.0 Release 6.0 - Revision P18-0023 (Gateway Astoria)",
+                .name          = "PhoenixBIOS 4.0 Rel. 6.0 - Revision P18-0023 (Gateway)",
                 .internal_name = "gwastoria",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 5,
@@ -797,7 +797,7 @@ static const device_config_t ms6117_config[] = {
         .name           = "bios",
         .description    = "BIOS Version",
         .type           = CONFIG_BIOS,
-        .default_string = "ms6117a",
+        .default_string = "ms6117",
         .default_int    = 0,
         .file_filter    = NULL,
         .spinner        = { 0 },
@@ -805,7 +805,7 @@ static const device_config_t ms6117_config[] = {
         .bios           = {
             {
                 .name          = "AMIBIOS 6 (071595) - Revision 2.0",
-                .internal_name = "ms6117a",
+                .internal_name = "ms6117",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
                 .local         = 0,
@@ -858,7 +858,7 @@ static const device_config_t ms6117_config[] = {
                 .files         = { "roms/machines/ms6117/611732x_patched.BIN", "" }
             },
             {
-                .name          = "AwardBIOS v4.51PG - Revision 1.4 (Fujitsu-Siemens OEM)",
+                .name          = "AwardBIOS v4.51PG - Revision 1.4 (Fujitsu Siemens)",
                 .internal_name = "ms6117wfs",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -867,7 +867,7 @@ static const device_config_t ms6117_config[] = {
                 .files         = { "roms/machines/ms6117/AWARD 1.04 .BIN", "" }
             },
             {
-                .name          = "AwardBIOS v4.51PG - Revision 1.02 (LG IBM Multinet x7E)",
+                .name          = "AwardBIOS v4.51PG - Revision 1.02 (LG IBM)",
                 .internal_name = "ms6117wlg",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -876,7 +876,7 @@ static const device_config_t ms6117_config[] = {
                 .files         = { "roms/machines/ms6117/BIOS.BIN", "" }
             },
             {
-                .name          = "AwardBIOS v4.51PG - Revision 1.5 (Viglen Vig67M)",
+                .name          = "AwardBIOS v4.51PG - Revision 1.5 (Viglen)",
                 .internal_name = "ms6117wvi",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -1003,7 +1003,7 @@ static const device_config_t in440ex_config[] = {
                 .files         = { "roms/machines/in440ex/655100.bin", "" }
             },
             {
-                .name          = "AwardBIOS v4.51PG - Revision 1.00 (Toshiba Equium 3000M)",
+                .name          = "AwardBIOS v4.51PG - Revision 1.00 (Toshiba)",
                 .internal_name = "equium3000m_100",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -1012,7 +1012,7 @@ static const device_config_t in440ex_config[] = {
                 .files         = { "roms/machines/in440ex/659100.bin", "" }
             },
             {
-                .name          = "AwardBIOS v4.51PG - Revision 1.01 (Toshiba Equium 3000M)",
+                .name          = "AwardBIOS v4.51PG - Revision 1.01 (Toshiba)",
                 .internal_name = "equium3000m",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -1021,7 +1021,7 @@ static const device_config_t in440ex_config[] = {
                 .files         = { "roms/machines/in440ex/659101.bin", "" }
             },
             {
-                .name          = "AwardBIOS v4.51PG - Revision 1.02 (Gobi Internet PC)",
+                .name          = "AwardBIOS v4.51PG - Revision 1.02 (Gobi)",
                 .internal_name = "gobipc",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -1039,7 +1039,7 @@ static const device_config_t in440ex_config[] = {
                 .files         = { "roms/machines/in440ex/654103.bin", "" }
             },
             {
-                .name          = "PhoenixBIOS 4.0 Release 6.0 (Sony Vaio PCV-E2xx)",
+                .name          = "PhoenixBIOS 4.0 Rel. 6.0 (Sony)",
                 .internal_name = "pcve2xx",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -1134,7 +1134,7 @@ static const device_config_t in440exd_config[] = {
                 .files         = { "roms/machines/in440exd/852100.bin", "" }
             },
             {
-                .name          = "AwardBIOS v4.51PG - Revision 1.01 (CompUSA PC American Pro)",
+                .name          = "AwardBIOS v4.51PG - Revision 1.01 (CompUSA)",
                 .internal_name = "americanpro",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -1352,7 +1352,7 @@ static const device_config_t como_config[] = {
         .selection      = { { 0 } },
         .bios           = {
             {
-                .name          = "AMIBIOS 6 (071595) - Revision 1.08 (Olivetti OEM)",
+                .name          = "AMIBIOS 6 (071595) - Revision 1.08 (Olivetti)",
                 .internal_name = "como_olivetti",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -1361,7 +1361,7 @@ static const device_config_t como_config[] = {
                 .files         = { "roms/machines/como/COMO_Olivetti_OEM.ROM", "" }
             },
             {
-                .name          = "AMIBIOS 6 (071595) - Revision 1.12 (eMachines OEM)",
+                .name          = "AMIBIOS 6 (071595) - Revision 1.12 (eMachines)",
                 .internal_name = "como",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -1500,21 +1500,12 @@ static const device_config_t be6ii_config[] = {
         .name           = "bios",
         .description    = "BIOS Version",
         .type           = CONFIG_BIOS,
-        .default_string = "be6ii_70",
+        .default_string = "be6ii",
         .default_int    = 0,
         .file_filter    = NULL,
         .spinner        = { 0 },
         .selection      = { { 0 } },
         .bios           = {
-            {
-                .name          = "AwardBIOS v6.00PG - Revision 70",
-                .internal_name = "be6ii_70",
-                .bios_type     = BIOS_NORMAL,
-                .files_no      = 1,
-                .local         = 0,
-                .size          = 262144,
-                .files         = { "roms/machines/be6ii/Beh_70.bin", "" }
-            },
             {
                 .name          = "AwardBIOS v6.00PG - Revision NP",
                 .internal_name = "be6ii_np",
@@ -1605,6 +1596,15 @@ static const device_config_t be6ii_config[] = {
                 .size          = 262144,
                 .files         = { "roms/machines/be6ii/BEH_XU.BIN", "" }
             },
+            {
+                .name          = "AwardBIOS v6.00PG - Revision 70",
+                .internal_name = "be6ii",
+                .bios_type     = BIOS_NORMAL,
+                .files_no      = 1,
+                .local         = 0,
+                .size          = 262144,
+                .files         = { "roms/machines/be6ii/Beh_70.bin", "" }
+            },
             { .files_no = 0 }
         }
     },
@@ -1682,15 +1682,6 @@ static const device_config_t bx6_config[] = {
         .selection      = { { 0 } },
         .bios           = {
             {
-                .name          = "AwardBIOS v4.51PG - Revision EG",
-                .internal_name = "bx6",
-                .bios_type     = BIOS_NORMAL,
-                .files_no      = 1,
-                .local         = 0,
-                .size          = 131072,
-                .files         = { "roms/machines/bx6/BX6_EG.BIN", "" }
-            },
-            {
                 .name          = "AwardBIOS v4.51PG - Revision CW",
                 .internal_name = "bx6_CW",
                 .bios_type     = BIOS_NORMAL,
@@ -1698,6 +1689,15 @@ static const device_config_t bx6_config[] = {
                 .local         = 0,
                 .size          = 131072,
                 .files         = { "roms/machines/bx6/BX6_CW.BIN", "" }
+            },
+            {
+                .name          = "AwardBIOS v4.51PG - Revision EG",
+                .internal_name = "bx6_eg",
+                .bios_type     = BIOS_NORMAL,
+                .files_no      = 1,
+                .local         = 0,
+                .size          = 131072,
+                .files         = { "roms/machines/bx6/BX6_EG.BIN", "" }
             },
             {
                 .name          = "AwardBIOS v4.51PG - Revision GQ",
@@ -1719,7 +1719,7 @@ static const device_config_t bx6_config[] = {
             },
             {
                 .name          = "AwardBIOS v4.51PG - Revision QS",
-                .internal_name = "bx6_qs",
+                .internal_name = "bx6",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
                 .local         = 0,
@@ -1882,7 +1882,7 @@ static const device_config_t ax6bc_config[] = {
                 .files         = { "roms/machines/ax6bc/ax6bc110.bin", "" }
             },
             {
-                .name          = "AwardBIOS v4.60PGMA - Revision R2.20 (RM Accelerator 350P2XB/450P3XB)",
+                .name          = "AwardBIOS v4.60PGMA - Revision R2.20",
                 .internal_name = "ax6bc_rm",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -2097,7 +2097,7 @@ static const device_config_t ga686_config[] = {
         .selection      = { { 0 } },
         .bios           = {
             {
-                .name          = "AwardBIOS v4.51PG - Revision 5/11/1998 (Amptron PII-3100)",
+                .name          = "AwardBIOS v4.51PG - Revision 5/11/1998 (Amptron)",
                 .internal_name = "pii3100",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -2198,7 +2198,7 @@ static const device_config_t pavilion85xx_config[] = {
         .selection      = { { 0 } },
         .bios           = {
             {
-                .name          = "PhoenixBIOS 4.0 Release 6.0 - Revision 1.01",
+                .name          = "PhoenixBIOS 4.0 Rel. 6.0 - Revision 1.01",
                 .internal_name = "pavilion85xx_101",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -2207,7 +2207,7 @@ static const device_config_t pavilion85xx_config[] = {
                 .files         = { "roms/machines/pavilion85xx/HP BIOS 1.01.bin", "" }
             },
             {
-                .name          = "PhoenixBIOS 4.0 Release 6.0 - Revision 1.07",
+                .name          = "PhoenixBIOS 4.0 Rel. 6.0 - Revision 1.07",
                 .internal_name = "pavilion85xx",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -2412,7 +2412,7 @@ static const device_config_t se440bx2_config[] = {
         .selection      = { { 0 } },
         .bios           = {
             {
-                .name          = "PhoenixBIOS 4.0 Release 6.0 - Revision P04-0005 (Micron)",
+                .name          = "PhoenixBIOS 4.0 Rel. 6.0 - Revision P04-0005 (Micron)",
                 .internal_name = "se440bx2_p04mr",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 6,
@@ -2423,7 +2423,7 @@ static const device_config_t se440bx2_config[] = {
                                    "roms/machines/se440bx2/P04-0005.BI4", "roms/machines/se440bx2/P04-0005.RCV", "" }
             },
             {
-                .name          = "PhoenixBIOS 4.0 Release 6.0 - Revision P05-0006 (Packard Bell)",
+                .name          = "PhoenixBIOS 4.0 Rel. 6.0 - Revision P05-0006 (Packard Bell)",
                 .internal_name = "se440bx2_p05pb",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 6,
@@ -2434,7 +2434,7 @@ static const device_config_t se440bx2_config[] = {
                                    "roms/machines/se440bx2/S21AP05.BI4", "roms/machines/se440bx2/S21AP05.RCV", "" }
             },
             {
-                .name          = "PhoenixBIOS 4.0 Release 6.0 - Revision P05-0012",
+                .name          = "PhoenixBIOS 4.0 Rel. 6.0 - Revision P05-0012",
                 .internal_name = "se440bx2_p05",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 6,
@@ -2445,7 +2445,7 @@ static const device_config_t se440bx2_config[] = {
                                    "roms/machines/se440bx2/P05-0012.BI4", "roms/machines/se440bx2/P05-0012.RCV", "" }
             },
             {
-                .name          = "PhoenixBIOS 4.0 Release 6.0 - Revision P15-0016 (Micron)",
+                .name          = "PhoenixBIOS 4.0 Rel. 6.0 - Revision P15-0016 (Micron)",
                 .internal_name = "se440bx2_p15mr",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 6,
@@ -2456,7 +2456,7 @@ static const device_config_t se440bx2_config[] = {
                                    "roms/machines/se440bx2/P15-0016.BI4", "roms/machines/se440bx2/P15-0016.RCV", "" }
             },
             {
-                .name          = "PhoenixBIOS 4.0 Release 6.0 - Revision P17-0024",
+                .name          = "PhoenixBIOS 4.0 Rel. 6.0 - Revision P17-0024",
                 .internal_name = "se440bx2",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 6,
@@ -2541,7 +2541,7 @@ static const device_config_t ms6119_config[] = {
         .selection      = { { 0 } },
         .bios           = {
             {
-                .name          = "AMIBIOS 6 (071595) - Revision 1.72 (Packard Bell Tacoma with logo)",
+                .name          = "AMIBIOS 6 (071595) - Revision 1.72 (Packard Bell)",
                 .internal_name = "tacoma_172",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -2550,7 +2550,7 @@ static const device_config_t ms6119_config[] = {
                 .files         = { "roms/machines/ms6119/A19P2172.ROM", "" }
             },
             {
-                .name          = "AMIBIOS 6 (071595) - Revision 1.90 (Packard Bell Tacoma)",
+                .name          = "AMIBIOS 6 (071595) - Revision 1.90 (Packard Bell)",
                 .internal_name = "tacoma",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -2568,7 +2568,7 @@ static const device_config_t ms6119_config[] = {
                 .files         = { "roms/machines/ms6119/w6119ims.2a0", "" }
             },
             {
-                .name          = "AwardBIOS v4.51PG - Revision 2.12 (Viglen Vig69M)",
+                .name          = "AwardBIOS v4.51PG - Revision 2.12 (Viglen)",
                 .internal_name = "vig69m",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -2577,7 +2577,7 @@ static const device_config_t ms6119_config[] = {
                 .files         = { "roms/machines/ms6119/vig69m.212", "" }
             },
             {
-                .name          = "AwardBIOS v4.51PG - Revision 3.30b1 (LG IBM Multinet x7G)",
+                .name          = "AwardBIOS v4.51PG - Revision 3.30b1 (LG IBM)",
                 .internal_name = "lgibmx7g",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -2654,7 +2654,7 @@ static const device_config_t ms6147_config[] = {
         .selection      = { { 0 } },
         .bios           = {
             {
-                .name          = "AwardBIOS v4.51PG - Revision 1.2 (Fujitsu ErgoPro e368)",
+                .name          = "AwardBIOS v4.51PG - Revision 1.2 (Fujitsu)",
                 .internal_name = "ergoproe368",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -2672,7 +2672,7 @@ static const device_config_t ms6147_config[] = {
                 .files         = { "roms/machines/ms6147/W647MS18.BIN", "" }
             },
             {
-                .name          = "AwardBIOS v4.51PG - Revision 2.1 (Packard Bell Tempest)",
+                .name          = "AwardBIOS v4.51PG - Revision 2.1 (Packard Bell)",
                 .internal_name = "pbtempest",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -2762,7 +2762,7 @@ static const device_config_t p6sba_config[] = {
                 .files         = { "roms/machines/p6sba/SBAB21.ROM", "" }
             },
             {
-                .name          = "AwardBIOS v4.60PGA - Revision 05/07/1999 (Leadtek WinFast 8000BX)",
+                .name          = "AwardBIOS v4.60PGA - Revision 05/07/1999 (Leadtek)",
                 .internal_name = "8000bx",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -2852,7 +2852,7 @@ static const device_config_t s1846_config[] = {
                 .files         = { "roms/machines/s1846/bx46200f.rom", "" }
             },
             {
-                .name          = "AMIBIOS 6 (071595) - Revision 2.00.0x (Tulip Vision Line TP90)",
+                .name          = "AMIBIOS 6 (071595) - Revision 2.00.0x (Tulip Computers)",
                 .internal_name = "tp90",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -2936,7 +2936,7 @@ static const device_config_t vei8_config[] = {
         .selection      = { { 0 } },
         .bios           = {
             {
-                .name          = "AwardBIOS v6.00PG - Revision 61100003 (beta)",
+                .name          = "AwardBIOS v6.00PG - Revision 61100003 (Beta)",
                 .internal_name = "6110zu0003",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -2954,7 +2954,7 @@ static const device_config_t vei8_config[] = {
                 .files         = { "roms/machines/vei8/r804.bin", "" }
             },
             {
-                .name          = "AwardBIOS v6.00PG - Revision QHW.10.01 (HP Sherwood-B)",
+                .name          = "AwardBIOS v6.00PG - Revision QHW.10.01 (HP)",
                 .internal_name = "vei8",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -3190,7 +3190,7 @@ static const device_config_t p3v133_config[] = {
                 .files         = { "roms/machines/p3v133/1003.002", "" }
             },
             {
-                .name          = "Award Medallion BIOS v6.0 - Revision 0.18 (HP NetServer E200)",
+                .name          = "Award Medallion BIOS v6.0 - Revision 0.18 (HP)",
                 .internal_name = "p3v133_hp018",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -3282,7 +3282,7 @@ static const device_config_t ms6199va_config[] = {
                 .files         = { "roms/machines/ms6199va/w6199vms.350", "" }
             },
             {
-                .name          = "AwardBIOS v4.51PG - Revision 2.0 (Compaq ProSignia/Deskpro 693A)",
+                .name          = "AwardBIOS v4.51PG - Revision 2.0 (Compaq)",
                 .internal_name = "ms6199va_200",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -3291,7 +3291,7 @@ static const device_config_t ms6199va_config[] = {
                 .files         = { "roms/machines/ms6199va/W6199VC8.BIN", "" }
             },
             {
-                .name          = "AwardBIOS v4.51PG - Revision 2.0 (Compaq ProSignia/Deskpro 693A) [Patched for larger drives]",
+                .name          = "AwardBIOS v4.51PG - Revision 2.0 (Compaq, patched for large drives)",
                 .internal_name = "ms6199va_200p",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -3300,7 +3300,7 @@ static const device_config_t ms6199va_config[] = {
                 .files         = { "roms/machines/ms6199va/W6199VC8.PCD", "" }
             },
             {
-                .name          = "AwardBIOS v4.51PG - Revision 3.7 (Packard Bell Phoenix)",
+                .name          = "AwardBIOS v4.51PG - Revision 3.7 (Packard Bell)",
                 .internal_name = "ms6199va_370",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,

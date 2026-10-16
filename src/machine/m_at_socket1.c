@@ -133,7 +133,7 @@ static const device_config_t precisionv486_config[] = {
         .selection      = { { 0 } },
         .bios           = {
             {
-                .name          = "AMIBIOS 070791 (stock)",
+                .name          = "AMIBIOS 070791",
                 .internal_name = "precisionv486",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
@@ -142,7 +142,7 @@ static const device_config_t precisionv486_config[] = {
                 .files         = { "roms/machines/precisionv486/dell-486sx.bin", "" }
             },
             {
-                .name          = "AMIBIOS 070791 (modded, all setup options unhidden)",
+                .name          = "AMIBIOS 070791 (Modded, setup options unhidden)",
                 .internal_name = "precisionv486_modded",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 1,
