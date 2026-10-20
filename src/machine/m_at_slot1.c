@@ -1782,6 +1782,95 @@ machine_at_bx6_init(const machine_t *model)
     return ret;
 }
 
+static const device_config_t acerv66m_config[] = {
+    // clang-format off
+    {
+        .name           = "bios",
+        .description    = "BIOS Version",
+        .type           = CONFIG_BIOS,
+        .default_string = "acerv66m",
+        .default_int    = 0,
+        .file_filter    = NULL,
+        .spinner        = { 0 },
+        .selection      = { { 0 } },
+        .bios           = {
+            {
+                .name          = "Acer BIOS V3.2 - Revision 4.0 Q0 (IBM)",
+                .internal_name = "acerv66m_q0",
+                .bios_type     = BIOS_NORMAL,
+                .files_no      = 1,
+                .local         = 0,
+                .size          = 131072,
+                .files         = { "roms/machines/acerv66m/IBM_Aptiva_2163.bin", "" }
+            },
+            {
+                .name          = "Acer BIOS V3.2 - Revision 2.0 D1",
+                .internal_name = "acerv66m",
+                .bios_type     = BIOS_NORMAL,
+                .files_no      = 1,
+                .local         = 0,
+                .size          = 131072,
+                .files         = { "roms/machines/acerv66m/V66m_2d1.bin", "" }
+            },
+            { .files_no = 0 }
+        }
+    },
+    { .name = "", .description = "", .type = CONFIG_END }
+    // clang-format on
+};
+
+const device_t acerv66m_device = {
+    .name          = "Acer V66M",
+    .internal_name = "acerv66m",
+    .flags         = 0,
+    .local         = 0,
+    .init          = NULL,
+    .close         = NULL,
+    .reset         = NULL,
+    .available     = NULL,
+    .speed_changed = NULL,
+    .force_redraw  = NULL,
+    .config        = acerv66m_config
+};
+
+int
+machine_at_acerv66m_init(const machine_t *model)
+{
+    int         ret = 0;
+    const char *fn;
+
+    /* No ROMs available */
+    if (!device_available(model->device))
+        return ret;
+
+    device_context(model->device);
+    fn  = device_get_bios_file(machine_get_device(machine), device_get_config_bios("bios"), 0);
+    ret = bios_load_linear(fn, 0x000c0000, 262144, 0);
+    device_context_restore();
+
+    machine_at_common_init(model);
+
+    pci_init(PCI_CONFIG_TYPE_1);
+    pci_register_slot(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0);
+    pci_register_slot(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4);
+    pci_register_slot(0x0B, PCI_CARD_SOUND,       3, 0, 0, 0);
+    pci_register_slot(0x10, PCI_CARD_NORMAL,      1, 2, 3, 4);
+    pci_register_slot(0x0D, PCI_CARD_NORMAL,      2, 3, 4, 1);
+    pci_register_slot(0x0E, PCI_CARD_NORMAL,      3, 4, 1, 2);
+    pci_register_slot(0x01, PCI_CARD_AGPBRIDGE,   1, 2, 3, 4);
+
+    device_add(&i440zx_device);
+    device_add(&piix4e_device);
+    device_add_params(&fdc37mx0x_device, (void *) (FDC37M70X | FDC37XXX7 | FDC37C93X_NO_NVR));
+    device_add_params(&sst_flash_29ee020_device, (void *) SST_FORCE_128);
+    spd_register(SPD_TYPE_SDRAM, 0x3, 128);
+
+    if (sound_card_current[0] == SOUND_INTERNAL)
+        machine_snd = device_add(machine_get_snd_device(machine));
+
+    return ret;
+}
+
 int
 machine_at_p2bls_init(const machine_t *model)
 {
