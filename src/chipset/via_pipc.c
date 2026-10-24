@@ -1151,12 +1151,17 @@ pipc_write(int func, int addr, UNUSED(int len), uint8_t val, void *priv)
                 break;
 
             case 0x47:
-                if (val & 0x01)
+                if (val & 0x01) {
+                    /* Rx47[0] is self-clearing, so make sure the CF9 emulation
+                       sees a 0 -> 1 transition on every request. */
+                    pci_write(0x0cf9, 0x00, NULL);
                     pci_write(0x0cf9, (val & 0x80) ? 0x06 : 0x04, NULL);
-                pic_set_shadow(!!(val & 0x10));
-                pic_elcr_io_handler(!!(val & 0x20));
-                dev->pci_isa_regs[0x47] = val & 0xfe;
-                break;
+
+                    /* The integrated KBC is reset along with the chipset
+                       on a soft reset (hard resets already do this). */
+                    if (!(val & 0x80))
+                        device_reset_all(DEVICE_KBC);
+                }
             case 0x48:
                 c                       = (dev->pci_isa_regs[0x48] ^ val) & 0x04;
                 dev->pci_isa_regs[0x48] = val;
