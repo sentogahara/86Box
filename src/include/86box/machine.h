@@ -312,6 +312,7 @@ enum {
     MACHINE_CHIPSET_VIA_APOLLO_PRO,
     MACHINE_CHIPSET_VIA_APOLLO_PRO_133,
     MACHINE_CHIPSET_VIA_APOLLO_PRO_133A,
+    MACHINE_CHIPSET_VIA_APOLLO_PRO_133T,
     MACHINE_CHIPSET_VLSI_SCAMP,
     MACHINE_CHIPSET_VLSI_VL82C480,
     MACHINE_CHIPSET_VLSI_VL82C481,
@@ -1635,6 +1636,7 @@ extern const device_t  ms6318_device;
 extern int             machine_at_ms6318_init(const machine_t *);
 extern int             machine_at_m790mr_init(const machine_t *);
 extern int             machine_at_cairo5_init(const machine_t *);
+extern int             machine_at_ga6vtmr_init(const machine_t *);
 
 /* m_at_misc.c */
 extern int             machine_at_vpc2007_init(const machine_t *);
