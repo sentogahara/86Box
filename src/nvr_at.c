@@ -509,6 +509,15 @@ timer_update(void *priv)
     }
 }
 
+static int
+nvr_dv_running(const nvr_t *nvr, const local_t *local)
+{
+    uint8_t dv = nvr->regs[RTC_REGA] & 0x70;
+
+    return (dv == 0x20) ||
+           ((local->flags & FLAG_RTC_BANKED) && ((dv == 0x30) || (dv == 0x40)));
+}
+
 static void
 timer_load_count(nvr_t *nvr)
 {
@@ -517,7 +526,7 @@ timer_load_count(nvr_t *nvr)
 
     timer_disable(&local->rtc_timer);
 
-    if ((nvr->regs[RTC_REGA] & 0x70) != 0x20) {
+    if (!nvr_dv_running(nvr, local)) {
         local->state = 0;
         return;
     }
@@ -562,7 +571,7 @@ timer_tick(nvr_t *nvr)
 
     /* Only update it there is no SET in progress.
        Also avoid updating it is DV2-DV0 are not set to 0, 1, 0. */
-    if (((nvr->regs[RTC_REGA] & 0x70) == 0x20) && !(nvr->regs[RTC_REGB] & REGB_SET)) {
+    if ((nvr_dv_running(nvr, local)) && !(nvr->regs[RTC_REGB] & REGB_SET)) {
         /* Set the UIP bit, announcing the update. */
         local->stat = REGA_UIP;
 
@@ -678,6 +687,7 @@ nvr_write(uint16_t addr, uint8_t val, void *priv)
     nvr_t   *nvr     = (nvr_t *) priv;
     local_t *local   = (local_t *) nvr->data;
     uint8_t  addr_id = (addr & 0x0e) >> 1;
+    uint8_t  dv      = (nvr->regs[RTC_REGA] >> 4) & 7;
 
     cycles -= ISA_CYCLES(8);
 
@@ -700,6 +710,12 @@ nvr_write(uint16_t addr, uint8_t val, void *priv)
                 local->addr[addr_id] |= (0x80 * local->bank[addr_id]);
         } else if ((addr_id == 0x1) && (local->flags & FLAG_PIIX4))
             local->addr[addr_id] = (local->addr[addr_id] & 0x7f) | 0x80;
+        if ((local->flags & FLAG_RTC_BANKED) && (addr_id == 0x0) && (local->addr[0] >= 0x40)) {
+            if (dv == 3)            /* bank 1 (RTC bank): 0x40-0x7F -> 0xC0-0xFF */
+                local->addr[0] += 0x80;
+            else if (dv == 4)       /* bank 2 (APC bank): 0x40-0x7F -> 0x80-0xBF */
+                local->addr[0] += 0x40;
+        }
         if (local->bank[addr_id] > 0)
             local->addr[addr_id] = (local->addr[addr_id] & 0x7f) | (0x80 * local->bank[addr_id]);
         if (!(local->flags & FLAG_NO_NMI))
@@ -1227,6 +1243,11 @@ nvr_at_init(const device_t *info)
 
     /* Initialize the generic NVR. */
     nvr_init(nvr);
+
+    if ((local->flags & FLAG_RTC_BANKED) && nvr->is_new) {
+        memset(&nvr->regs[0x80], 0x00, 0x40);
+        nvr->regs[0x82] = 0x41;
+    }
 
     if (nvr->is_new && (local->flags & FLAG_MARTIN_HACK))
         nvr->regs[0x11] = nvr->regs[0x2f] = 0x02;

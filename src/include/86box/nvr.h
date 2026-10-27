@@ -83,6 +83,7 @@
 #define FLAG_AMI_1999J_HACK     0x1000
 #define FLAG_SPITFIRE_HACK      0x2000
 #define FLAG_BX6_HACK           0x4000
+#define FLAG_RTC_BANKED         0x8000   /* PC87307-style RTC: bank 0/1/2 selected by CRA DV bits */
 
 #define NVR_CENTURY_AT          (RTC_CENTURY_AT << 16)
 #define NVR_CENTURY_PS          (RTC_CENTURY_PS << 16)
@@ -110,6 +111,7 @@
 #define NVR_AT_MA               (NVR_AT | FLAG_MULTI_ADDRESS)
 #define NVR_AT_MA_ZERO          (NVR_AT_ZERO_DEFAULT | FLAG_MULTI_ADDRESS)
 #define NVR_AT_MB               (NVR_AT_ZERO_DEFAULT | FLAG_MULTI_BANK)
+#define NVR_AT_BANKED           (NVR_AT | FLAG_RTC_BANKED)
 #define NVR_PS                  (NVR_AT_STANDARD_ZERO | NVR_CENTURY_PS)
 #define NVR_PS_NO_NMI           (NVR_PS | FLAG_NO_NMI)
 #define NVR_AMSTRAD             (NVR_IRQ_AMSTRAD | NVR_ADDR_STANDARD | NVR_CENTURY_AT)
