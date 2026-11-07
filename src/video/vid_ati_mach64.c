@@ -5143,6 +5143,41 @@ static const device_config_t mach64ragexl_config[] = {
     { .name = "", .description = "", .type = CONFIG_END }
 };
 
+static const device_config_t mach64ragexl_onboard_config[] = {
+    {
+        .name           = "memory",
+        .description    = "Memory size",
+        .type           = CONFIG_SELECTION,
+        .default_string = NULL,
+        .default_int    = 8,
+        .file_filter    = NULL,
+        .spinner        = { 0 },
+        .selection      = {
+            { .description = "4 MB", .value = 4 },
+            { .description = "8 MB", .value = 8 },
+            { .description = ""                 }
+        },
+        .bios           = { { 0 } }
+    },
+    {
+        .name           = "render_threads",
+        .description    = "Render threads",
+        .type           = CONFIG_SELECTION,
+        .default_string = NULL,
+        .default_int    = 2,
+        .file_filter    = NULL,
+        .spinner        = { 0 },
+        .selection      = {
+            { .description = "1", .value = 1 },
+            { .description = "2", .value = 2 },
+            { .description = "4", .value = 4 },
+            { .description = ""              }
+        },
+        .bios           = { { 0 } }
+    },
+    { .name = "", .description = "", .type = CONFIG_END }
+};
+
 /* The Rage LT Pro AGP card (BGA-312, 4C42h), SDRAM. The LT Pro
    takes up to 16 MB (MEM_CNTL's MEM_SIZE, LT Pro RRG 4-18); the cards
    had 4 or 8 MB. */
@@ -5575,6 +5610,20 @@ const device_t mach64ragexl_pci_device = {
     .speed_changed = mach64_speed_changed,
     .force_redraw  = mach64_force_redraw,
     .config        = mach64ragexl_config
+};
+
+const device_t mach64ragexl_pci_onboard_device = {
+    .name          = "ATI Rage XL PCI (On-Board)",
+    .internal_name = "mach64_ragexl_pci_onboard",
+    .flags         = DEVICE_PCI,
+    .local         = MACH64_GTB | MACH64_FLAG_RAGEPRO | MACH64_FLAG_RAGEXL | MACH64_FLAG_ONBOARD,
+    .init          = mach64gtb_init,
+    .close         = mach64_close,
+    .reset         = mach64_reset,
+    .available     = NULL,
+    .speed_changed = mach64_speed_changed,
+    .force_redraw  = mach64_force_redraw,
+    .config        = mach64ragexl_onboard_config
 };
 
 /* The Rage LT Pro (AGP). */
