@@ -45,6 +45,7 @@
 #include <86box/video.h>
 #include <86box/vid_svga.h>
 
+#define ENABLE_X86_LOG 1
 /* The opcode of the instruction currently being executed. */
 uint8_t opcode;
 
@@ -710,6 +711,9 @@ x86_reset_deferred(void)
 void
 softresetx86_from(int src)
 {
+    pclog("softreset src=%i CS:IP=%04X:%08X SS:SP=%04X:%04X idt.limit=%04X cr0=%08X\n",
+      src, CS, cpu_state.oldpc, SS, SP, (unsigned) idt.limit, (unsigned) cr0);
+
     if (soft_reset_mask)
         return;
 

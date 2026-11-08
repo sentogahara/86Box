@@ -26,7 +26,7 @@
 #include <86box/ui.h>
 #include <86box/postcard.h>
 #include "cpu.h"
-
+#define ENABLE_POSTCARD_LOG 1
 uint8_t         postcard_codes[POSTCARDS_NUM];
 char            postcard_diags[5] = { 0 };
 

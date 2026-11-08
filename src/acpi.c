@@ -45,7 +45,7 @@
 #include <86box/hdc_ide.h>
 #include <86box/hdc_ide_sff8038i.h>
 #include <86box/sis_55xx.h>
-
+#define ENABLE_ACPI_LOG 1
 int        acpi_rtc_status     = 0;
 atomic_int acpi_pwrbut_pressed = 0;
 int        acpi_enabled        = 0;
@@ -1583,7 +1583,7 @@ acpi_reg_write_intel(int size, uint16_t addr, uint8_t val, void *priv)
             dev->regs.gporeg[addr & 3] = val;
             if ((addr == 0x34) && (machines[machine].init == machine_at_cubx_init))
                 hdc_onboard_enabled = (val & 0x01);
-            else if ((addr == 0x37) && (machines[machine].init == machine_at_acerv66ma_init))
+            else if ((addr == 0x37) && ((machines[machine].init == machine_at_acerv66lt_init) || (machines[machine].init == machine_at_acerv66ma_init)))
                 sst_set_xor(!(val & 0x20));
             break;
         default:
@@ -3175,7 +3175,8 @@ acpi_reset(void *priv)
         dev->regs.gpireg[2] = dev->gpireg2_default;
     for (uint8_t i = 0; i < 4; i++)
         dev->regs.gporeg[i] = dev->gporeg_default[i];
-    if (machines[machine].init == machine_at_acerv66ma_init) {
+    if ((machines[machine].init == machine_at_acerv66lt_init) ||
+        (machines[machine].init == machine_at_acerv66ma_init)) {
         /* Bit 4 must be cleared to avoid the password violated error. */
         dev->regs.gpireg[2] = 0xcd;
         /* Bit 5 must be set at reset to disable the A17 xor for the Flash. */

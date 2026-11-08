@@ -60,6 +60,8 @@
 #define DPL2 ((segdat2[2] >> 13) & 3)
 #define DPL3 ((segdat3[2] >> 13) & 3)
 
+#define ENABLE_X86SEG_LOG 1
+
 /* The EXT bit of the error codes a task switch raises: set while an IDT
    task gate delivers a hardware interrupt or an exception, "an event
    external to the program" (SDM Vol. 3, Interrupt 10, Exception Error

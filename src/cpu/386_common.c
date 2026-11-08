@@ -1920,6 +1920,9 @@ x86_int(int num)
         cpu_use_exec ? pmodeint(num, 0) : pmodeint_2386(num, 0);
     else {
         addr = (num << 2) + idt.base;
+            if (idt.limit < 0x3FF)
+            fatal("Real-mode INT %02X with IDT limit %04X base %08X at %04X:%08X\n",
+                  num, (unsigned) idt.limit, (unsigned) idt.base, CS, cpu_state.pc);
 
         if ((num << 2UL) + 3UL > idt.limit) {
             if (idt.limit < 35) {

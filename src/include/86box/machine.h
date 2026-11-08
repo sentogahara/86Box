@@ -1504,6 +1504,10 @@ extern const device_t  bx6_device;
 #endif
 extern int             machine_at_bx6_init(const machine_t *);
 #ifdef EMU_DEVICE_H
+extern const device_t  acerv66lt_device;
+#endif
+extern int             machine_at_acerv66lt_init(const machine_t *);
+#ifdef EMU_DEVICE_H
 extern const device_t  p2bls_device;
 #endif
 extern int             machine_at_p2bls_init(const machine_t *);

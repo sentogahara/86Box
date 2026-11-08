@@ -32,7 +32,7 @@
 #include <86box/m_amstrad.h>
 #include <86box/pci.h>
 #include <86box/sio.h>
-
+#define ENABLE_IO_LOG 1
 #define NPORTS 65536 /* PC/AT supports 64K ports */
 
 typedef struct _io_ {

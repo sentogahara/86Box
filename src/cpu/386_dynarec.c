@@ -1662,6 +1662,8 @@ inboard_post_fixups(void)
 
 }
 
+static uint32_t trace_cs[128], trace_ip[128], trace_pos = 0;
+
 /* As exec386_dynarec_int_common(): dbg is cpu_debug_regs_486, a constant. */
 __attribute__((always_inline)) static inline void
 exec386_common(int32_t cycs, const int dbg)
@@ -1700,6 +1702,16 @@ exec386_common(int32_t cycs, const int dbg)
             oldcs  = CS;
             oldcpl = CPL;
             cpu_state.oldpc = cpu_state.pc;
+            trace_cs[trace_pos & 127] = CS;
+            trace_ip[trace_pos & 127] = cpu_state.pc;
+            trace_pos++;
+            if (((cs + cpu_state.pc) == 0xFFFF0) || ((cs + cpu_state.pc) == 0xFE05B)) {
+                pclog("*** EXEC AT RESTART, last 128 CS:IP (oldest first):\n");
+                for (int k = 0; k < 128; k++) {
+                    uint32_t idx = (trace_pos + k) & 127;
+                    pclog("   %04X:%08X\n", trace_cs[idx], trace_ip[idx]);
+                }
+            }
             cpu_state.op32  = use32;
 
             cpu_state.ea_seg = &cpu_state.seg_ds;
@@ -1893,6 +1905,12 @@ block_ended:
 void
 exec386(int32_t cycs)
 {
+    static int announced = 0;
+    if (!announced) {
+        announced = 1;
+        pclog("exec386 interpreter is running\n");
+    }
+
     if (cpu_debug_regs_486)
         exec386_common(cycs, 1);
     else
