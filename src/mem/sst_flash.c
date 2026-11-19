@@ -91,8 +91,10 @@ typedef struct sst_bios_t {
 
     mem_mapping_t mapping[16];
     mem_mapping_t mapping_h[16];
+    mem_mapping_t mapping_m[16];
     uint8_t      *exec[16];
     uint8_t      *exec_h[16];
+    uint8_t      *exec_m[16];
     int           enabled[16];
     int           enabled_h[16];
 } sst_bios_t;
@@ -754,6 +756,8 @@ sst_decode_hook(void *priv)
             flash_bios_mapping_update(&dev->mapping[i], dev->exec[i]);
         if (dev->mapping_h[i].size)
             flash_bios_mapping_update(&dev->mapping_h[i], dev->exec_h[i]);
+        if (dev->mapping_m[i].size)
+            flash_bios_mapping_update(&dev->mapping_m[i], dev->exec_m[i]);
     }
 }
 
@@ -827,6 +831,19 @@ sst_init(const device_t *info)
             sst_bios_map(dev, &(dev->mapping_h[i]), &(dev->exec_h[i]), base | ((is6117 || cpu_16bitbus) ? 0xf00000 : 0xfff00000));
             dev->enabled_h[i] = 1;
         }
+    }
+
+    /* Acer M23D: the BIOS reads its modules from 0xFFF80000, so mirror the chip below FFFC0000. */
+    if (machines[machine].init == machine_at_acerm23d_init) {
+        for (int i = 0; i < count; i++) {
+            base = root_base + (i << 16);
+            sst_bios_map(dev, &(dev->mapping_m[i]), &(dev->exec_m[i]),
+                         (base | 0xfff00000) - size);
+        }
+
+        /* The mirror needs the ROM chip select state too, as rom.c sets for the normal range. */
+        mem_set_mem_state_both((0xfff00000 | root_base) - size, size,
+                               MEM_READ_ROMCS | MEM_WRITE_ROMCS);
     }
 
     /* Set the requested logo display */

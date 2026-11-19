@@ -286,7 +286,17 @@ spd_register(uint8_t ram_type, uint8_t slot_mask, uint16_t max_module_size)
                     sdram_data->col_bits |= 9 << 4;                                              /* same as first row, but just in case */
                 }
                 sdram_data->rows           = 2;
-                sdram_data->data_width_lsb = 64;
+
+                if (machines[machine].init == machine_at_acerm23d_init) {
+                    /* The Acer M23D BIOSes enable ECC mode by default and
+                       produce a POST error if it's not supported */
+                    sdram_data->data_width_lsb = 72;  /* 64 data + 8 ECC bits */
+                    ((uint8_t *) sdram_data)[11] = 2; /* module config. type: ECC */
+                    ((uint8_t *) sdram_data)[14] = 8; /* ECC width */
+                } else {
+                    sdram_data->data_width_lsb = 64;
+                }
+
                 sdram_data->signal_level   = SPD_SIGNAL_LVTTL;
                 sdram_data->tclk           = 0x75; /* 7.5 ns = 133.3 MHz */
                 sdram_data->tac            = 0x10;
